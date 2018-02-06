@@ -2,3 +2,5 @@ node_modules
 npm-debug.log
 creds.js
 data/*
+.DS_store
+*.swp
