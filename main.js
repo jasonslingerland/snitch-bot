@@ -5,7 +5,7 @@ const base64UserPass = Buffer.from(creds.username + ':' + creds.password).toStri
 const slack = axios.create({
   headers: { 'Content-type': 'application/json' }
 });
-const jira = axios.create({
+let jira = axios.create({
   headers: {
     'Content-type': 'application/json',
     'Authorization': `Basic ${base64UserPass}`
@@ -15,18 +15,26 @@ const jira = axios.create({
 
 function postMessage(message){
   return slack.post(creds.hookUrl, {
-    'text': message
+    text: message,
+    mrkdwn: true,
   });
 }
-
-//jira.get('issue/BEL-83255').then(console.log).catch(console.log);
-
-makeJqlQuery = function (query) {
+/*
+jira.get('issue/BEL-88130/changelog').then(response => {
+//  console.log(response.data.values[0]);
+});
+*/
+jira.makeJqlQuery = function (query) {
+  if (typeof query === 'string') {
+    query = {
+      jql: query
+    }
+  }
   query.validateQuery = 'strict';
   return jira.post('search', query);
 }
 
-makeJqlQuery({ jql: "createdDate >= startOfDay() order by lastViewed DESC", maxResults: 10}).then(response => {
- console.log(response.data);
-});
+const testJob = require('./jobs/fixVersionSnitch');
+console.log(testJob.name);
+testJob.fn(postMessage, jira);
 

@@ -25,15 +25,14 @@ module.exports = {
      let fixVersionChangedIssues = result.data.issues;
      let fixVersionChangedIds = [];
      fixVersionChangedIssues.forEach(issue => {
-       console.log(issue);
-       fixVersionChangedIds.push(issue.id);
+       fixVersionChangedIds.push(issue.key);
      });
      getUnwantedChanges(fixVersionChangedIds, jira).
        then(result => {
          console.log('--------------');
          const finalList = result.filter(change => {return change !== ''})
          console.log(finalList);
-         //postSlackMessage(finalList.join('\n'));
+         postSlackMessage(finalList.join('\n'));
        }).catch(console.log);
    }).catch(console.log);
  }
@@ -66,12 +65,10 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
           // if the author is not in QA
           for (let change of changeObject.items) {
             if (change.fieldId === 'fixVersions') {
-              /*
-              console.log(`${changeObject.author.name} changed issue #${fixVersionChangedId}` +
-              ` from ${change.fromString} to ${change.toString}`);
-              */
-              resolve(`${changeObject.author.name} changed issue #${fixVersionChangedId}` +
-              ` from ${change.fromString} to ${change.toString}`);
+              resolve(buildChangeString(changeObject.author.name,
+                                        fixVersionChangedId,
+                                        change.fromString,
+                                        change.toString));
             }
           }
         }
@@ -80,4 +77,19 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
     }).catch(error=> {resolve('could not search:' + fixVersionChangedId)});
   });
 }
+
+function buildChangeString(name, fixVersionChangedId, fromString, toString) {
+  const beginning =
+    `${name} changed issue <https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}>: `;
+  let end;
+  if (fromString === null) {
+    end = `ADDED fix version ${toString}`;
+  } else if (toString === null) {
+    end = `REMOVED fix version ${fromString}`;
+  } else {
+    end = `CHANGED from ${fromString} to ${toString}`;
+  }
+  return beginning + end;
+}
+
 

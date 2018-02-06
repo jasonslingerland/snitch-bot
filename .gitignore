@@ -4,3 +4,4 @@ creds.js
 data/*
 .DS_store
 *.swp
+.idea
