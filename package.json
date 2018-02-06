@@ -1,0 +1,17 @@
+{
+  "name": "snitch-bot",
+  "version": "1.0.0",
+  "description": "snitches when shady stuff happens in jira",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.17.1",
+    "express": "^4.16.2",
+    "minimongo": "^4.8.0",
+    "node-persist": "^2.1.0"
+  }
+}
