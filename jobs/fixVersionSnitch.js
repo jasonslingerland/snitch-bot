@@ -86,7 +86,7 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
 
 function buildChangeString(fixVersionChangedId, fromString, toString) {
   const beginning =
-    `<https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}>: `;
+    `<https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}> `;
   let end;
   if (fromString === null) {
     end = `ADDED fix version ${toString}`;
@@ -109,12 +109,12 @@ function buildSlackMessage(changes) {
       consolidatedChanges[change.author] = [change.changeString];
     }
   }
-  let message = '```\n';
+  let message = '';
   for (let key in consolidatedChanges) {
-    message += key + '\n';
+    message += `*${key}*\n`;
     for (let item of consolidatedChanges[key]) {
-      message += '\t' + item + '\n';
+      message += `>${item}\n`;
     }
   }
-  return message += '```';
+  return message;
 }
