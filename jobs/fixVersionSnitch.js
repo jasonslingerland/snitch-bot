@@ -29,10 +29,9 @@ module.exports = {
      });
      getUnwantedChanges(fixVersionChangedIds, jira).
        then(result => {
-         console.log('--------------');
-         const finalList = result.filter(change => {return change !== ''})
-         console.log(finalList);
-         postSlackMessage(finalList.join('\n'));
+         const changes = result.filter(change => {return change !== ''});
+         console.log(buildSlackMessage(changes));
+         postSlackMessage(buildSlackMessage(changes));
        }).catch(console.log);
    }).catch(console.log);
  }
@@ -65,22 +64,29 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
           // if the author is not in QA
           for (let change of changeObject.items) {
             if (change.fieldId === 'fixVersions') {
-              resolve(buildChangeString(changeObject.author.name,
-                                        fixVersionChangedId,
-                                        change.fromString,
-                                        change.toString));
+              resolve({
+                author: changeObject.author.name,
+                changeString: buildChangeString(fixVersionChangedId,
+                                                change.fromString,
+                                                change.toString)
+              });
             }
           }
         }
       }
       resolve('');
-    }).catch(error=> {resolve('could not search:' + fixVersionChangedId)});
+    }).catch(error=> {
+      resolve({
+        author: 'error',
+        changeString: 'could not search:' + fixVersionChangedId
+      });
+    });
   });
 }
 
-function buildChangeString(name, fixVersionChangedId, fromString, toString) {
+function buildChangeString(fixVersionChangedId, fromString, toString) {
   const beginning =
-    `${name} changed issue <https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}>: `;
+    `<https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}>: `;
   let end;
   if (fromString === null) {
     end = `ADDED fix version ${toString}`;
@@ -92,4 +98,23 @@ function buildChangeString(name, fixVersionChangedId, fromString, toString) {
   return beginning + end;
 }
 
-
+function buildSlackMessage(changes) {
+  let consolidatedChanges = {};
+  for (let change of changes) {
+    let entry = consolidatedChanges[change.author];
+    console.log(change.author);
+    if (entry) {
+      entry.push(change.changeString);
+    } else {
+      consolidatedChanges[change.author] = [change.changeString];
+    }
+  }
+  let message = '```\n';
+  for (let key in consolidatedChanges) {
+    message += key + '\n';
+    for (let item of consolidatedChanges[key]) {
+      message += '\t' + item + '\n';
+    }
+  }
+  return message += '```';
+}
