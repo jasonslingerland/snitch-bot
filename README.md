@@ -22,7 +22,7 @@ module.exports = {
   description: <job description>,
   slackChannel: <slack channel name (one of the ones in creds.js)>,
   invokeEvery: <time period to run the job, see link below code snippet for format>,
-  fn: <function that takes:
+  fn: <function to do the job, it's given:
          - A function that posts a slack message
          - An object used to interface with the Jira API>
 }
