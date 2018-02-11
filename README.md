@@ -8,6 +8,7 @@ module.exports = {
   hookUrls: {
     <a slack channel name>: <a slack channel hook URL>
   },
+  jiraBaseUrl: <url for jira API>,
   username: <jira username>,
   password: <jira password>
 }

@@ -15,7 +15,7 @@ module.exports = {
  name: 'fix version snitch',
  description: 'checks to see if anyone not in QA changes a fix version',
  slackChannel: 'test',
- invokeEvery: '1 hour',
+ invokeEvery: '10 seconds',
  fn: function(postSlackMessage, jira) {
    jira.makeJqlQuery({
      jql: 'fixVersion CHANGED DURING (-7d, now())',

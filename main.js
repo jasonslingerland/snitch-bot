@@ -13,7 +13,7 @@ let jira = axios.create({
     'Content-type': 'application/json',
     'Authorization': `Basic ${base64UserPass}`
   },
-  baseURL: 'https://belmonttechinc.atlassian.net/rest/api/2/'
+  baseURL: creds.jiraBaseUrl
 });
 
 function createPostMessageFn(slackHookUrl) {
