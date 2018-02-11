@@ -5,3 +5,5 @@ data/*
 .DS_store
 *.swp
 .idea
+test.js
+

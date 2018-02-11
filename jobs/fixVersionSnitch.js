@@ -14,11 +14,11 @@ job object should look like:
 module.exports = {
  name: 'fix version snitch',
  description: 'checks to see if anyone not in QA changes a fix version',
- slackchannel: 'testChannel',
- invokeEvery: 'hour',
+ slackChannel: 'test',
+ invokeEvery: '1 hour',
  fn: function(postSlackMessage, jira) {
    jira.makeJqlQuery({
-     jql: 'fixVersion changed AFTER startOfWeek()',
+     jql: 'fixVersion CHANGED DURING (-7d, now())',
      maxResults: 150,
      fields: ['issuetype']
    }).then(result => {
@@ -30,8 +30,15 @@ module.exports = {
      getUnwantedChanges(fixVersionChangedIds, jira).
        then(result => {
          const changes = result.filter(change => {return change !== ''});
-         console.log(buildSlackMessage(changes));
-         postSlackMessage(buildSlackMessage(changes));
+         console.log('building slack message');
+         let slackMessage = buildSlackMessage(changes);
+         console.log(slackMessage);
+         if (slackMessage === '') {
+           return;
+         } else {
+           postSlackMessage(slackMessage).
+             then(console.log).catch(console.log);
+         }
        }).catch(console.log);
    }).catch(console.log);
  }

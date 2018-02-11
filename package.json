@@ -12,6 +12,7 @@
     "axios": "^0.17.1",
     "express": "^4.16.2",
     "minimongo": "^4.8.0",
-    "node-persist": "^2.1.0"
+    "node-persist": "^2.1.0",
+    "schedule": "^0.1.0"
   }
 }
