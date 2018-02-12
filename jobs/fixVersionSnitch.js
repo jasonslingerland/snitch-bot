@@ -1,4 +1,5 @@
 'use strict';
+const utils = require('../utils');
 
 /*
 job object should look like:
@@ -92,8 +93,7 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
 }
 
 function buildChangeString(fixVersionChangedId, fromString, toString) {
-  const beginning =
-    `<https://belmonttechinc.atlassian.net/browse/${fixVersionChangedId}|${fixVersionChangedId}> `;
+  const beginning = utils.createIssueLink(fixVersionChangedId);
   let end;
   if (fromString === null) {
     end = `ADDED fix version ${toString}`;

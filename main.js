@@ -13,7 +13,7 @@ let jira = axios.create({
     'Content-type': 'application/json',
     'Authorization': `Basic ${base64UserPass}`
   },
-  baseURL: creds.jiraBaseUrl
+  baseURL: creds.jiraBaseUrl + '/rest/api/2/'
 });
 
 function createPostMessageFn(slackHookUrl) {
