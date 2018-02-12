@@ -9,7 +9,9 @@ function runJobs(postSlackMessageFunctions, jira) {
   let previousMessages = {};
 
   fs.readdirSync(normalizedPath).forEach(function(file) {
-    jobs.push(require('./jobs/' + file));
+    if (file.endsWith('.js')) {
+      jobs.push(require('./jobs/' + file));
+    }
   });
 
   console.log('Loading jobs...');
@@ -20,9 +22,7 @@ function runJobs(postSlackMessageFunctions, jira) {
       if (!postSlackMessageFn) {
         console.log('Unknown slack channel, did you spell it correctly?');
       } else {
-        job.fn(postSlackMessageFn,
-               jira,
-               previousMessages);
+        job.fn(postSlackMessageFn, jira);
       }
     });
     console.log(`invoking ${job.name} every ${job.invokeEvery}`);
