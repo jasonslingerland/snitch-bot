@@ -6,4 +6,6 @@ data/*
 *.swp
 .idea
 test.js
+run.sh
+kill.sh
 
