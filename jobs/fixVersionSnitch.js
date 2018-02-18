@@ -96,11 +96,11 @@ function buildChangeString(fixVersionChangedId, fromString, toString) {
   const beginning = utils.createIssueLink(fixVersionChangedId);
   let end;
   if (fromString === null) {
-    end = `ADDED fix version ${toString}`;
+    end = ` ADDED fix version ${toString}`;
   } else if (toString === null) {
-    end = `REMOVED fix version ${fromString}`;
+    end = ` REMOVED fix version ${fromString}`;
   } else {
-    end = `CHANGED from ${fromString} to ${toString}`;
+    end = ` CHANGED from ${fromString} to ${toString}`;
   }
   return beginning + end;
 }
