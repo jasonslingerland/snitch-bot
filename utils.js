@@ -3,7 +3,7 @@ const jiraBaseUrl = require('./creds').jiraBaseUrl;
 
 const createIssueLink = function (idOrKey) {
   return `<${jiraBaseUrl}/browse/${idOrKey}|${idOrKey}>`;
-}
+};
 
 const getIssueKeys = function (issues) {
   let issueKeys = [];
@@ -11,11 +11,11 @@ const getIssueKeys = function (issues) {
     issueKeys.push(issue.key);
   });
   return issueKeys;
-}
+};
 
 module.exports = {
   createIssueLink: createIssueLink,
   jiraBaseUrl: jiraBaseUrl,
   getIssueKeys: getIssueKeys
-}
+};
 
