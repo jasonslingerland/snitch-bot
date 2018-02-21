@@ -20,11 +20,15 @@ To add a job you create a javascript file in the jobs directory that looks like:
 module.exports = {
   name: <job name>,
   description: <job description>,
-  slackChannel: <slack channel name (one of the ones in creds.js)>,
-  invokeEvery: <time period to run the job, see link below code snippet for format>,
-  fn: <function to do the job, it's given:
-         - A function that posts a slack message
-         - An object used to interface with the Jira API>
+  type: <job type. currently either 'time-based' or 'reactive',
+  dependencies: [
+    <list of dependencies as strings. Look at the bottom of main.js
+     for the list of those. e.g. 'slackChannel'>
+  ],
+  slackChannel: <slack channel name (one of the ones in creds.js)>, // OPTIONAL
+  invokeEvery: <time period to run the job, see link below code snippet for format>, // OPTIONAL
+  fn: <function to do the job, it's given what's listed in the dependencies
+       list as a destructured (object) parameter, must be exactly as listed in dependencies>
 }
 ```
 ### important note for invokeEvery
