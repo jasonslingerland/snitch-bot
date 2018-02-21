@@ -55,5 +55,8 @@ jira.makeJqlQuery = function (query) {
   return jira.post('search', query);
 };
 
-testRunner.runJobs(postSlackMessageFunctions, jira);
+testRunner.runJobs({
+  postSlackMessageFunctions: postSlackMessageFunctions,
+  jira: jira
+});
 

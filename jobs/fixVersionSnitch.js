@@ -15,9 +15,17 @@ job object should look like:
 module.exports = {
  name: 'fix version snitch',
  description: 'checks to see if anyone not in QA changes a fix version',
+ type: 'time-based',
+ dependencies: [
+   'slackChannel',
+   'jira'
+ ],
  slackChannel: 'test',
  invokeEvery: '10 seconds',
- fn: function(postSlackMessage, jira) {
+ fn: function({
+                slackChannel,
+                jira
+ }) {
    jira.makeJqlQuery({
      jql: 'fixVersion CHANGED DURING (-7d, now())',
      maxResults: 150,
@@ -37,7 +45,7 @@ module.exports = {
          if (slackMessage === '') {
            return;
          } else {
-           postSlackMessage(slackMessage).
+           slackChannel(slackMessage).
              then(console.log).catch(console.log);
          }
        }).catch(console.log);

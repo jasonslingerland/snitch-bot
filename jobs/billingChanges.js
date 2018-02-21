@@ -4,9 +4,17 @@ const utils = require('../utils');
 module.exports = {
   name: 'billingChanges',
   description: 'checks for billing changes',
+  type: 'time-based',
+  dependencies: [
+    'slackChannel',
+    'jira'
+  ],
   slackChannel: 'test',
   invokeEvery: '10 s',
-  fn: function (postSlackMessage, jira) {
+  fn: function ({
+                  slackChannel,
+                  jira
+  }) {
     jira.makeJqlQuery({
       jql: 'type = story and component = billing and createdDate >= -7d',
       fields: ['issuetype']
@@ -19,7 +27,7 @@ module.exports = {
       if (!issueKeys[0]) {
         console.log('no new billing changes');
       } else {
-        postSlackMessage(message);
+        slackChannel(message);
       }
     }).catch(console.log);
   }
