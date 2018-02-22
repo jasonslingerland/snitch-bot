@@ -10,7 +10,7 @@ module.exports = {
     'jira'
   ],
   slackChannel: 'test',
-  invokeEvery: '10 s',
+  invokeEvery: '10 h',
   fn: function ({
                   slackChannel,
                   jira

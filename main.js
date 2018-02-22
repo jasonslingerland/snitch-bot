@@ -55,7 +55,7 @@ jira.makeJqlQuery = function (query) {
   return jira.post('search', query);
 };
 
-testRunner.runJobs({
+testRunner.runJobs(require('./chatbot').fn.slackBot, {
   postSlackMessageFunctions: postSlackMessageFunctions,
   jira: jira
 });

@@ -1,4 +1,4 @@
-// taken from: https://olegkorol.de/2017/04/23/Creating-a-smart-ChatBot-for-Slack/
+// (mostly) taken from: https://olegkorol.de/2017/04/23/Creating-a-smart-ChatBot-for-Slack/
 'use strict';
 const Botkit = require('botkit');
 const creds = require('./creds');
@@ -8,12 +8,7 @@ const slack_token  = creds.oauth;
 const slack_oauth  = creds.oauth;
 
 exports.fn = {
-  /**
-   * Starts Slack-Bot
-   *
-   * @returns {*}
-   */
-  slackBot() {
+  slackBot(messageReceivedFn) {
     // initialisation
     const slackController = Botkit.slackbot({
       // optional: wait for a confirmation events for each outgoing message before continuing to the next message in a conversation
@@ -31,11 +26,7 @@ exports.fn = {
       slackController.log('Slack connection established.');
     });
     // listener that handles incoming messages
-    slackController.hears(['.*'], ['direct_message', 'direct_mention'], (bot, message) => {
-      slackController.log('Slack message received');
-      console.log(message);
-      bot.reply(message, 'I have received your message!')
-    });
+    slackController.hears(['.*'], ['direct_message', 'direct_mention'], messageReceivedFn);
   }
 };
 
