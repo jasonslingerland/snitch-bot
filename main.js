@@ -59,4 +59,3 @@ testRunner.runJobs(require('./chatbot').fn.slackBot, {
   postSlackMessageFunctions: postSlackMessageFunctions,
   jira: jira
 });
-

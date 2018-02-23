@@ -5,7 +5,6 @@ module.exports = {
   description: 'say hello',
   type: 'responsive',
   dependencies: [
-    'responsiveJobs'
   ],
   hiddenFromHelp: true,
   phrases: [

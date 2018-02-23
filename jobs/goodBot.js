@@ -5,7 +5,6 @@ module.exports = {
   description: 'respond to being called a good boy',
   type: 'responsive',
   dependencies: [
-    'responsiveJobs'
   ],
   hiddenFromHelp: true,
   phrases: [
