@@ -7,7 +7,7 @@ module.exports = {
   dependencies: [
     'jira'
   ],
-  hiddenFromHelp: true,
+  hiddenFromHelp: false,
   phrases: [
     'give me p2 p3 count',
     'p2 p3 count'
@@ -25,14 +25,11 @@ module.exports = {
       console.log(filterResults);
       let searchResultsPromises = [];
       for (let item of filterResults) {
-        console.log('search url-------------');
-        console.log(item.data.searchUrl.split('/api/2/')[1]);
-        console.log('search url-------------');
         searchResultsPromises.push(jira.get(item.data.searchUrl.split('/api/2/')[1]));
       }
       Promise.all(searchResultsPromises).then(searchResults => {
-        const p2Total = searchResults[0].data.total;
-        const p3Total = searchResults[1].data.total;
+        const p2Total = searchResults[1].data.total;
+        const p3Total = searchResults[0].data.total;
         bot.reply(message, `The total number of p2 bugs is \`${p2Total}\` and the total number of p3 bugs is \`${p3Total}\``);
       }).catch(err => {
         console.log(err);

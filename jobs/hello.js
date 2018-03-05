@@ -6,7 +6,7 @@ module.exports = {
   type: 'responsive',
   dependencies: [
   ],
-  hiddenFromHelp: true,
+  hiddenFromHelp: false,
   phrases: [
     'hello',
     'howdy',
