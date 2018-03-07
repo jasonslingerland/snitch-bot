@@ -9,12 +9,13 @@ let phraseToJobMap = {};
 // TODO: persist this in a better way
 let userInfoStore = {};
 const userInfoStrings = {
-  'githubEmail': 'Github Email',
-  'jiraEmail': 'Jira Email'
+  'githubId': 'Github ID',
+  'jiraUserId': 'Jira User ID'
 };
 
 function runJobs(slackBot, dependenciesObj) {
   dependenciesObj.userInfoStore = userInfoStore;
+  dependenciesObj.userInfoStrings = userInfoStrings;
   // getting jobs from the directory
   let jobs = [];
   fs.readdirSync(normalizedPath).forEach(function(file) {
@@ -77,6 +78,7 @@ function listenForSlackMessages(dependenciesObj) {
     const job = findJobFromMessage(message);
     // check if it needs identifying info
     let userInfo = {};
+    let userInfoPopulated = true;
     if (job.userInfoNeeded) {
       for (let userInfoNeeded of job.userInfoNeeded) {
         if (!userInfoStore[message.user] || !userInfoStore[message.user][userInfoNeeded]) {
@@ -84,18 +86,22 @@ function listenForSlackMessages(dependenciesObj) {
           bot.reply(message,
             `Sorry, I can't do that without your ${userInfoStrings[userInfoNeeded]}.\n`
             + 'Give it to me by saying something like: '
-            + `\`@Amazing-Bot my ${userInfoStrings[userInfoNeeded]} is: example@email.com\``);
+            + `\`@Amazing-Bot set my ${userInfoStrings[userInfoNeeded]} to "something"\`.`
+            + ' Remember to include the quotes.');
+          userInfoPopulated = false;
         } else {
-          userInfo[userInfoNeeded] = dependenciesObj.userInfoStore[userInfoNeeded];
+          userInfo[userInfoNeeded] = dependenciesObj.userInfoStore[message.user][userInfoNeeded];
         }
       }
     }
-    //bundle dependencies and add bot, message, userInfo
-    let dependencies = bundleDependencies(dependenciesObj, job.dependencies);
-    dependencies.bot = bot;
-    dependencies.message = message;
-    dependencies.userInfo = userInfo;
-    job.fn(dependencies);
+    if (userInfoPopulated) {
+      //bundle dependencies and add bot, message, userInfo
+      let dependencies = bundleDependencies(dependenciesObj, job.dependencies);
+      dependencies.bot = bot;
+      dependencies.message = message;
+      dependencies.userInfo = userInfo;
+      job.fn(dependencies);
+    }
   }
 }
 
