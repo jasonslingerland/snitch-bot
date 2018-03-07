@@ -10,13 +10,15 @@ module.exports = {
   },
   jiraBaseUrl: <url for jira (e.g. https://companyName.atlassian.net)>,
   username: <jira username>,
-  password: <jira password>
+  password: <jira password>,
+  oauth: <slack oauth token for the bot user>
 }
 ```
 
-To add a job you create a javascript file in the jobs directory that looks like:
+To add a time based job you create a javascript file in the jobs directory that looks like:
 
 ```
+// see billingChanges.js for a simple example
 module.exports = {
   name: <job name>,
   description: <job description>,
@@ -25,11 +27,26 @@ module.exports = {
     <list of dependencies as strings. Look at the bottom of main.js
      for the list of those. e.g. 'slackChannel'>
   ],
-  slackChannel: <slack channel name (one of the ones in creds.js)>, // OPTIONAL
-  invokeEvery: <time period to run the job, see link below code snippet for format>, // OPTIONAL
+  hiddenFromHelp: <true or false>,
+  slackChannel: <slack channel name (one of the ones in creds.js)>,
+  invokeEvery: <time period to run the job, see link below code snippet for format>,
   fn: <function to do the job, it's given what's listed in the dependencies
        list as a destructured (object) parameter, must be exactly as listed in dependencies>
 }
+```
+
+To add a responsive job you do the same thing but without slackChannel or invokeEvery. You must also include a few
+additional fields. fn must also include 'bot' and 'message' in its arguments. The additional fields are:
+
+```
+// see myOpenBugs.js for a simple example
+phrases: [
+  <phrases to fuzzy match on to invoke the job>
+],
+userInfoNeeded: [
+  <list the user info you need. Must match exactly what's listed in jobRunner.
+   gets passed to fn as 'userInfo'. Can be omitted if you don't need anything.> 
+]
 ```
 ### important note for invokeEvery
 
