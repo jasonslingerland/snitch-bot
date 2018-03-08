@@ -5,8 +5,7 @@ module.exports = {
   description: 'lists number of open bugs that a user has',
   type: 'responsive',
   dependencies: [
-    'jira',
-    'userInfo'
+    'jira'
   ],
   userInfoNeeded: [
     'jiraUserId'
@@ -28,12 +27,19 @@ module.exports = {
       fields: ['issuetype'],
       maxResults: 1
     }).then(result => {
-      const count = result.data.total;
-      let plural = '';
-      if (count > 1) {
-        plural = 's'
+      if (result.data.warningMessages) {
+        bot.reply(message, `<@${message.user}> sorry, something went wrong. `
+          + `Received error message from jira:\n \`${result.data.warningMessages.join('\`\n')}\``);
+      } else {
+        const count = result.data.total;
+        let plural = '';
+        if (count > 1) {
+          plural = 's'
+        }
+        bot.reply(message, `<@${message.user}> you have \`${count}\` open bug${plural}.`);
       }
-      bot.reply(message, `<@${message.user}> you have \`${count}\` open bug${plural}.`);
+    }).catch(response => {
+      bot.reply(message, `<@${message.user}> sorry, something went wrong.`)
     });
   }
 };
