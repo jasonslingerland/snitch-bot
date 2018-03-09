@@ -1,4 +1,5 @@
 'use strict';
+const utils = require('../utils');
 
 module.exports = {
   name: 'myOpenBugs',
@@ -22,24 +23,20 @@ module.exports = {
                   jira,
                   userInfo
                 }) {
-    jira.makeJqlQuery({
-      jql: `assignee = ${userInfo.jiraUserId} AND status = open AND type = bug`,
-      fields: ['issuetype'],
-      maxResults: 1
-    }).then(result => {
-      if (result.data.warningMessages) {
-        bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-          + `Received error message from jira:\n \`${result.data.warningMessages.join('\`\n')}\``);
-      } else {
-        const count = result.data.total;
-        let plural = '';
-        if (count > 1) {
-          plural = 's'
-        }
-        bot.reply(message, `<@${message.user}> you have \`${count}\` open bug${plural}.`);
+    utils.getIssueCount({
+      jqlOrPromise: `assignee = ${userInfo.jiraUserId} AND status = open AND type = bug`,
+      bot: bot,
+      message: message,
+      jira: jira
+    }).
+    then(count => {
+      let plural = '';
+      if (count > 1) {
+        plural = 's'
       }
+      bot.reply(message, `<@${message.user}> you have \`${count}\` open bug${plural}.`);
     }).catch(response => {
-      bot.reply(message, `<@${message.user}> sorry, something went wrong.`)
+      console.log(response);
     });
   }
 };

@@ -1,4 +1,5 @@
 'use strict';
+const utils = require('../utils');
 
 module.exports = {
   name: 'getP2P3Count',
@@ -27,14 +28,18 @@ module.exports = {
       for (let item of filterResults) {
         searchResultsPromises.push(jira.get(item.data.searchUrl.split('/api/2/')[1]));
       }
-      Promise.all(searchResultsPromises).then(searchResults => {
-        const p2Total = searchResults[1].data.total;
-        const p3Total = searchResults[0].data.total;
+      utils.getIssueCount({
+        jqlOrPromise: Promise.all(searchResultsPromises),
+        bot: bot,
+        message: message
+      }).
+      then(counts => {
+        const p2Total = counts[1];
+        const p3Total = counts[0];
         bot.reply(message, `The total number of p2 bugs is \`${p2Total}\` and the total number of p3 bugs is \`${p3Total}\``);
       }).catch(err => {
         console.log(err);
-        bot.reply(message, 'oops something went wrong.');
-      })
+      });
     }).catch(err => {
       console.log(err);
       bot.reply(message, 'oops something went wrong.');

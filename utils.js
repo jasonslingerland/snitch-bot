@@ -13,9 +13,57 @@ const getIssueKeys = function (issues) {
   return issueKeys;
 };
 
+// TODO list issues in request or issues that match jql
+
+const getIssueCount = function ({
+                                  jqlOrPromise,
+                                  bot,
+                                  message,
+                                  jira
+}) {
+  return new Promise(function (resolve, reject) {
+    let promise;
+    if (typeof jqlOrPromise === 'string') {
+      promise = jira.makeJqlQuery({
+        jql: jqlOrPromise,
+        fields: ['issuetype'],
+        maxResults: 1
+      });
+    } else {
+      promise = jqlOrPromise;
+    }
+    console.log('============================');
+    console.log(promise);
+    console.log('============================');
+    promise.then(result => {
+      if (!Array.isArray(result)) {
+        result = [result];
+      }
+      let counts = [];
+      for (let item of result) {
+        if (item.data.warningMessages) {
+          bot.reply(message, `<@${message.user}> sorry, something went wrong. `
+            + `Received error message from jira:\n \`${result.data.warningMessages.join('\`\n')}\``);
+          reject(item);
+        }
+        counts.push(item.data.total);
+      }
+      if (counts[1] === undefined) {
+        resolve(counts[0]);
+      } else {
+        resolve(counts);
+      }
+    }).catch(error => {
+      console.log(error);
+      bot.reply(message, `<@${message.user}> sorry, something went wrong.`);
+    });
+  });
+};
+
 module.exports = {
   createIssueLink: createIssueLink,
   jiraBaseUrl: jiraBaseUrl,
-  getIssueKeys: getIssueKeys
+  getIssueKeys: getIssueKeys,
+  getIssueCount: getIssueCount
 };
 
