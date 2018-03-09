@@ -32,9 +32,6 @@ const getIssueCount = function ({
     } else {
       promise = jqlOrPromise;
     }
-    console.log('============================');
-    console.log(promise);
-    console.log('============================');
     promise.then(result => {
       if (!Array.isArray(result)) {
         result = [result];
