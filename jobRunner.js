@@ -72,7 +72,7 @@ function bundleDependencies(dependenciesObj, jobDependencies, optionalSlackChann
 function listenForSlackMessages(dependenciesObj) {
   return async (bot, message) => {
     // find the job this message pertains to
-    const job = findJobFromMessage(message);
+    const [job, phraseMatch] = findJobFromMessage(message);
     // check if it needs identifying info
     let userInfo = {};
     let userInfoPopulated = true;
@@ -108,6 +108,7 @@ function listenForSlackMessages(dependenciesObj) {
       dependencies.bot = bot;
       dependencies.message = message;
       dependencies.userInfo = userInfo;
+      dependencies.phraseMatch = phraseMatch;
       job.fn(dependencies);
     }
   }
@@ -127,9 +128,9 @@ function findJobFromMessage(message) {
   console.log(match);
   // if we don't have a match or the confidence is extremely low, tell the user we don't know what to do
   if (!match || match[0][0] < 0.33) {
-    return unknownIntent;
+    return [unknownIntent, undefined];
   } else {
-    return phraseToJobMap[match[0][1]];
+    return [phraseToJobMap[match[0][1]], match[0][1]];
   }
 }
 
