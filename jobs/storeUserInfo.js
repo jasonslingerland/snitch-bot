@@ -25,7 +25,13 @@ module.exports = {
      TODO: either add a better way to automagically keep up with user info stuff, or add to docs that this needs
      to stay updated
      */
-    let userInfoValue = message.text.split(/[“”"'`‘’]/)[1].trim();
+    let userInfoValue = message.text.split(/[“”"'`‘’]/)[1];
+    if (userInfoValue === undefined) {
+      utils.somethingWentWrong(bot, message)();
+      return;
+    } else {
+      userInfoValue = userInfoValue.trim();
+    }
     let userInfoKey;
     let lowercaseMessageText = message.text.toLowerCase();
     if (lowercaseMessageText.includes('git')) {
