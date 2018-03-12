@@ -6,15 +6,12 @@ const normalizedPath = require("path").join(__dirname, "jobs");
 let FuzzySet = require('fuzzyset.js');
 let fuzzyMatcher = FuzzySet();
 let phraseToJobMap = {};
-// TODO: persist this in a better way
-let userInfoStore = {};
 const userInfoStrings = {
   'githubId': 'Github ID',
   'jiraUserId': 'Jira User ID'
 };
 
 function runJobs(slackBot, dependenciesObj) {
-  dependenciesObj.userInfoStore = userInfoStore;
   dependenciesObj.userInfoStrings = userInfoStrings;
   // getting jobs from the directory
   let jobs = [];
@@ -73,15 +70,26 @@ function bundleDependencies(dependenciesObj, jobDependencies, optionalSlackChann
 }
 
 function listenForSlackMessages(dependenciesObj) {
-  return (bot, message) => {
+  return async (bot, message) => {
     // find the job this message pertains to
     const job = findJobFromMessage(message);
     // check if it needs identifying info
     let userInfo = {};
     let userInfoPopulated = true;
     if (job.userInfoNeeded) {
+      let userInfoStore = dependenciesObj.userInfoStore;
+      let retreivedUserInfo;
+      try {
+        retreivedUserInfo = await userInfoStore.findOne({user: message.user});
+      } catch (e) {
+        console.log(e);
+        retreivedUserInfo = {};
+      }
+      if (retreivedUserInfo === null) {
+        retreivedUserInfo = {};
+      }
       for (let userInfoNeeded of job.userInfoNeeded) {
-        if (!userInfoStore[message.user] || !userInfoStore[message.user][userInfoNeeded]) {
+        if (!retreivedUserInfo[userInfoNeeded]) {
           // if we don't have what we're looking for ask the user to input it.
           bot.reply(message,
             `Sorry, I can't do that without your ${userInfoStrings[userInfoNeeded]}.\n`
@@ -90,7 +98,7 @@ function listenForSlackMessages(dependenciesObj) {
             + ' Remember to include the quotes.');
           userInfoPopulated = false;
         } else {
-          userInfo[userInfoNeeded] = dependenciesObj.userInfoStore[message.user][userInfoNeeded];
+          userInfo[userInfoNeeded] = retreivedUserInfo[userInfoNeeded];
         }
       }
     }

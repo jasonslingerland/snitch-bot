@@ -1,4 +1,5 @@
 'use strict';
+const utils = require('../utils');
 
 module.exports = {
   name: 'storeUserInfo',
@@ -24,7 +25,7 @@ module.exports = {
      TODO: either add a better way to automagically keep up with user info stuff, or add to docs that this needs
      to stay updated
      */
-    let userInfoValue = message.text.split(/[“”"'`]/)[1].trim();
+    let userInfoValue = message.text.split(/[“”"'`‘’]/)[1].trim();
     let userInfoKey;
     let lowercaseMessageText = message.text.toLowerCase();
     if (lowercaseMessageText.includes('git')) {
@@ -39,7 +40,18 @@ module.exports = {
       userInfoStore[message.user] = {};
     }
     userInfoStore[message.user][userInfoKey] = userInfoValue;
-    bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
-    + 'If this isn\'t correct please double check your spelling and formatting and try again.');
+    const valueToSet = {};
+    valueToSet[userInfoKey] = userInfoValue;
+    userInfoStore.collection.findOneAndUpdate({user: message.user},
+                                              {$set: valueToSet},
+                                              {
+                                                returnOriginal: false,
+                                                upsert: true
+                                              }).
+    then(result => {
+      console.log(result);
+      bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
+        + 'If this isn\'t correct please double check your spelling and formatting and try again.');
+    }).catch(utils.somethingWentWrong(bot, message));
   }
 };

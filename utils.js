@@ -57,10 +57,17 @@ const getIssueCount = function ({
   });
 };
 
+const somethingWentWrong = function (bot, message) {
+  return function() {
+    bot.reply(message, 'Sorry, something went wrong.');
+  }
+};
+
 module.exports = {
   createIssueLink: createIssueLink,
   jiraBaseUrl: jiraBaseUrl,
   getIssueKeys: getIssueKeys,
-  getIssueCount: getIssueCount
+  getIssueCount: getIssueCount,
+  somethingWentWrong: somethingWentWrong
 };
 

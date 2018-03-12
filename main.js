@@ -5,6 +5,8 @@ const creds = require('./creds');
 const base64UserPass = Buffer.from(creds.username + ':' + creds.password).toString('base64');
 const testRunner = require('./jobRunner');
 const axiosRetry = require('axios-retry');
+const slackBot = require('./chatbot').fn.slackBot;
+const UserInfoStore = require('./userInfoStore').UserInfoStore;
 
 const slack = axios.create({
   headers: { 'Content-type': 'application/json' }
@@ -55,7 +57,10 @@ jira.makeJqlQuery = function (query) {
   return jira.post('search', query);
 };
 
-testRunner.runJobs(require('./chatbot').fn.slackBot, {
-  postSlackMessageFunctions: postSlackMessageFunctions,
-  jira: jira
-});
+UserInfoStore.init().then(userInfoStore => {
+  testRunner.runJobs(slackBot, {
+    postSlackMessageFunctions: postSlackMessageFunctions,
+    jira: jira,
+    userInfoStore: userInfoStore
+  });
+}).catch(console.log);

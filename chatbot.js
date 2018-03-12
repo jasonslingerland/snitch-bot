@@ -5,7 +5,6 @@ const creds = require('./creds');
 
 // use the tokens you got from the previous step
 const slack_token  = creds.oauth;
-const slack_oauth  = creds.oauth;
 
 exports.fn = {
   slackBot(messageReceivedFn) {
