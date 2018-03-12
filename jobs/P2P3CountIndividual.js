@@ -2,7 +2,7 @@
 const utils = require('../utils');
 
 module.exports = {
-  name: 'getP2Count',
+  name: 'P2P3CountIndividual',
   description: 'gets the count of open p2 bugs or p3 bugs',
   type: 'responsive',
   dependencies: [
