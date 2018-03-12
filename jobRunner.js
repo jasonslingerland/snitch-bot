@@ -78,18 +78,18 @@ function listenForSlackMessages(dependenciesObj) {
     let userInfoPopulated = true;
     if (job.userInfoNeeded) {
       let userInfoStore = dependenciesObj.userInfoStore;
-      let retreivedUserInfo;
+      let retrievedUserInfo;
       try {
-        retreivedUserInfo = await userInfoStore.findOne({user: message.user});
+        retrievedUserInfo = await userInfoStore.findOne({user: message.user});
       } catch (e) {
         console.log(e);
-        retreivedUserInfo = {};
+        retrievedUserInfo = {};
       }
-      if (retreivedUserInfo === null) {
-        retreivedUserInfo = {};
+      if (retrievedUserInfo === null) {
+        retrievedUserInfo = {};
       }
       for (let userInfoNeeded of job.userInfoNeeded) {
-        if (!retreivedUserInfo[userInfoNeeded]) {
+        if (!retrievedUserInfo[userInfoNeeded]) {
           // if we don't have what we're looking for ask the user to input it.
           bot.reply(message,
             `Sorry, I can't do that without your ${userInfoStrings[userInfoNeeded]}.\n`
@@ -98,7 +98,7 @@ function listenForSlackMessages(dependenciesObj) {
             + ' Remember to include the quotes.');
           userInfoPopulated = false;
         } else {
-          userInfo[userInfoNeeded] = retreivedUserInfo[userInfoNeeded];
+          userInfo[userInfoNeeded] = retrievedUserInfo[userInfoNeeded];
         }
       }
     }
