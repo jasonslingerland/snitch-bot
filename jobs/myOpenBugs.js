@@ -24,7 +24,7 @@ module.exports = {
                   userInfo
                 }) {
     utils.getIssueCount({
-      jqlOrPromise: `assignee = ${userInfo.jiraUserId} AND status = open AND type = bug`,
+      jqlOrPromise: `assignee = ${userInfo.jiraUserId} AND status IN (Open, Reopened, "In Progress") AND type = bug`,
       bot: bot,
       message: message,
       jira: jira
