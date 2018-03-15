@@ -41,9 +41,9 @@ const listIssuesInResult = function ({
       }
       let issueListStrings = [];
       for (let item of response) {
-        if (item.data.warningMessages) {
+        if (item.data && item.data.warningMessages) {
           bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-            + `Received error message from jira:\n \`${response.data.warningMessages.join('\`\n')}\``);
+            + `Received error message from jira:\n \`${item.data.warningMessages.join('\`\n')}\``);
           reject(item);
         } else {
           let issueListString = '';
@@ -90,9 +90,9 @@ const getIssueCount = function ({
       }
       let counts = [];
       for (let item of result) {
-        if (item.data.warningMessages) {
+        if (item.data && item.data.warningMessages) {
           bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-            + `Received error message from jira:\n \`${result.data.warningMessages.join('\`\n')}\``);
+            + `Received error message from jira:\n \`${item.data.warningMessages.join('\`\n')}\``);
           reject(item);
         }
         counts.push(item.data.total);
