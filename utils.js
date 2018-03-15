@@ -47,7 +47,7 @@ const listIssuesInResult = function ({
           reject(item);
         } else {
           let issueListString = '';
-          if (item.data === undefined) {
+          if (item.data === undefined || item.data.issues[0] === undefined) {
             issueListString = '>No issues.';
           } else {
             const issueKeys = getIssueKeys(item.data.issues);
