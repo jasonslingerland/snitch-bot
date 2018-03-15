@@ -1,17 +1,6 @@
 'use strict';
 const utils = require('../utils');
 
-/*
-job object should look like:
-{
-  job name,
-  job description,
-  slack channel to post to,
-  time period for invocation,
-  function that takes slack channel and jira object
-}
-*/
-// TODO: double notifications are (will be) annoying
 module.exports = {
  name: 'fix version snitch',
  description: 'checks to see if anyone not in QA changes a fix version',
@@ -60,7 +49,8 @@ const qaUserList = [
   'kathyChang',
   'jsundahl',
   'rbaek',
-  'rdharmadhikari'
+  'rdharmadhikari',
+  'nkania'
 ];
 
 function getUnwantedChanges(fixVersionChangedIds, jira) {
@@ -76,10 +66,12 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
     jira.get(`issue/${fixVersionChangedId}/changelog`).then(response => {
       // reversing because we want the most recent change
       for (let changeObject of response.data.values.reverse()) {
-        if (!qaUserList.includes(changeObject.author.name)) {
-          // if the author is not in QA
-          for (let change of changeObject.items) {
-            if (change.fieldId === 'fixVersions') {
+        let userIsInQA = qaUserList.includes(changeObject.author.name);
+        for (let change of changeObject.items) {
+          if (change.fieldId === 'fixVersions') {
+            if (userIsInQA) {
+              resolve('');
+            } else {
               resolve({
                 author: changeObject.author.name,
                 changeString: buildChangeString(fixVersionChangedId,
