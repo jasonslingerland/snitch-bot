@@ -11,7 +11,7 @@ module.exports = {
   userInfoNeeded: [
     'jiraUserId'
   ],
-  hiddenFromHelp: true,
+  hiddenFromHelp: false,
   phrases: [
     'open bugs',
     'how many open bugs do i have',
