@@ -20,19 +20,23 @@ const UserInfoStore = new function () {
     return new Promise(function (resolve, reject) {
       MongoClient.connect("mongodb://localhost:27017/exampleDb", function (err, client) {
         if (!err) {
-          vm.db = client.db('snitch-db');
-          vm.collection = vm.db.collection('userInfo');
-          vm.insertOne = function (document) {
+          const db = client.db('snitch-db');
+          const userInfoCollection = db.collection('userInfo');
+          let userInfoStore = {collection: userInfoCollection};
+          userInfoStore.insertOne = function (document) {
             return new Promise(function (resolve, reject) {
-              vm.collection.insertOne(document, callbackToResolveReject(resolve, reject));
+              userInfoStore.collection.insertOne(document, callbackToResolveReject(resolve, reject));
             });
           };
-          vm.findOne = function (query, options) {
+          userInfoStore.findOne = function (query, options) {
             return new Promise(function (resolve, reject) {
-              vm.collection.findOne(query, options, callbackToResolveReject(resolve, reject));
+              userInfoStore.collection.findOne(query, options, callbackToResolveReject(resolve, reject));
             });
           };
-          resolve(vm);
+          resolve({
+            db: db,
+            userInfoStore: userInfoStore
+          })
         } else {
           reject(err);
         }
