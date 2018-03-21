@@ -67,7 +67,7 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
       // reversing because we want the most recent change
       for (let changeObject of response.data.values.reverse()) {
         let userIsInQA = qaUserList.includes(changeObject.author.name);
-        for (let change of changeObject.items) {
+        for (let change of changeObject.items.reverse()) {
           if (change.fieldId === 'fixVersions') {
             if (userIsInQA) {
               resolve('');
