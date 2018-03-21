@@ -71,6 +71,10 @@ function bundleDependencies(dependenciesObj, jobDependencies, optionalSlackChann
 
 function listenForSlackMessages(dependenciesObj) {
   return async (bot, message) => {
+    //exit if we get the restart command
+    if (message.text === '//restart') {
+      process.exit(0)
+    }
     // find the job this message pertains to
     const [job, phraseMatch] = findJobFromMessage(message);
     // check if it needs identifying info
