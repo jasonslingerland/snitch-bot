@@ -17,7 +17,10 @@ function runJobs(slackBot, dependenciesObj) {
   let jobs = [];
   fs.readdirSync(normalizedPath).forEach(function(file) {
     if (file.endsWith('.js')) {
-      jobs.push(require('./jobs/' + file));
+      const job = require('./jobs/' + file);
+      if (!job.disabled) {
+        jobs.push(job);
+      }
     }
   });
 
