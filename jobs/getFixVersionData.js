@@ -20,12 +20,20 @@ module.exports = {
                  message
                }) {
     const collection = mongo.collection('fixVersions');
-    const jiraQueryResult = await jira.makeJqlQuery({
-      jql: 'fixVersion CHANGED DURING (-365d, now())',
-      maxResults: 500,
-      fields: ['issuetype']
-    });
-    const fixVersionChangedIds = utils.getIssueKeys(jiraQueryResult.data.issues);
+    let fixVersionChangedIds = [];
+    let issuesReceived = 0;
+    let totalNumIssues;
+    do {
+      const jiraQueryResult = await jira.makeJqlQuery({
+        jql: 'fixVersion CHANGED DURING (-30d, now())',
+        maxResults: 250,
+        fields: ['issuetype'],
+        startAt: issuesReceived
+      });
+      issuesReceived += jiraQueryResult.data.maxResults;
+      totalNumIssues = jiraQueryResult.data.total;
+      fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
+    } while (issuesReceived < totalNumIssues);
     const unwantedChanges = flatten(await getUnwantedChanges(fixVersionChangedIds, jira));
     // console.log(unwantedChanges);
     await collection.insertMany(unwantedChanges);
