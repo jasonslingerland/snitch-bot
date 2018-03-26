@@ -19,13 +19,14 @@ module.exports = {
                  bot,
                  message
                }) {
+    const numDaysToLookBack = 30;
     const collection = mongo.collection('fixVersions');
     let fixVersionChangedIds = [];
     let issuesReceived = 0;
     let totalNumIssues;
     do {
       const jiraQueryResult = await jira.makeJqlQuery({
-        jql: 'fixVersion CHANGED DURING (-30d, now())',
+        jql: `fixVersion CHANGED DURING (-${numDaysToLookBack}d, now())`,
         maxResults: 250,
         fields: ['issuetype'],
         startAt: issuesReceived
@@ -34,7 +35,7 @@ module.exports = {
       totalNumIssues = jiraQueryResult.data.total;
       fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
     } while (issuesReceived < totalNumIssues);
-    const unwantedChanges = flatten(await getUnwantedChanges(fixVersionChangedIds, jira));
+    const unwantedChanges = flatten(await getUnwantedChanges(fixVersionChangedIds, jira, numDaysToLookBack));
     // console.log(unwantedChanges);
     await collection.insertMany(unwantedChanges);
     let aggregation = await collection.aggregate([
@@ -78,15 +79,15 @@ function flatten(array) {
   return [].concat.apply([], array);
 }
 
-function getUnwantedChanges(fixVersionChangedIds, jira) {
+function getUnwantedChanges(fixVersionChangedIds, jira, numDaysToLookBack) {
   let promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, jira));
+    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, jira, numDaysToLookBack));
   }
   return Promise.all(promises);
 }
 
-function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
+function getUnwantedChangeInIssue(fixVersionChangedId, jira, numDaysToLookBack) {
   return new Promise(function(resolve, reject) {
     let fixVersionChanges = [];
     jira.get(`issue/${fixVersionChangedId}/changelog`).then(response => {
@@ -96,15 +97,21 @@ function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
         for (let change of changeObject.items.reverse()) {
           if (change.fieldId === 'fixVersions') {
            if (!toStringPopulated) {
-            fixVersionChanges.push({
-              user: changeObject.author.name,
-              userIsInQa: userIsInQa,
-              timestamp: changeObject.created,
-              issueKey: fixVersionChangedId,
-              from: change['fromString'],
-              to: change['toString']
-            });
-            toStringPopulated = true;
+              const timestamp = new Date(changeObject.created);
+              let todayMinusDaysToLookBack = new Date();
+              todayMinusDaysToLookBack.setDate(todayMinusDaysToLookBack.getDate() - numDaysToLookBack);
+              if (timestamp.getTime() >= todayMinusDaysToLookBack.getTime()) {
+                fixVersionChanges.push({
+                  user: changeObject.author.name,
+                  userIsInQa: userIsInQa,
+                  timestamp: changeObject.created,
+                  issueKey: fixVersionChangedId,
+                  from: change['fromString'],
+                  to: change['toString'],
+                  removeThis: timestamp.getTime() <= todayMinusDaysToLookBack.getTime()
+                });
+                toStringPopulated = true;
+              }
            } else {
              fixVersionChanges[fixVersionChanges.length - 1].from = change['fromString'];
            }
