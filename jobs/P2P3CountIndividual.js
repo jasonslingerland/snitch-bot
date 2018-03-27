@@ -22,7 +22,9 @@ module.exports = {
                   phraseMatch
                 }) {
     let filterPath;
+    let p2p3String = 'p3';
     if (phraseMatch.includes('p2')) {
+      p2p3String = 'p3';
       filterPath = 'filter/15209';
     } else {
       filterPath = 'filter/17400';
@@ -37,7 +39,7 @@ module.exports = {
         message: message
       }).
       then(count => {
-        bot.reply(message, `The total number of p2 bugs is \`${count}\``);
+        bot.reply(message, `The total number of ${p2p3String} bugs is \`${count}\``);
       }).catch(err => {
         console.log(err);
         utils.somethingWentWrong(bot, message);
