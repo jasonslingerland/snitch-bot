@@ -52,7 +52,7 @@ const listIssuesInResult = function ({
           } else {
             const issueKeys = getIssueKeys(item.data.issues);
             for (const key of issueKeys) {
-              issueListString += `>${createIssueLink(key)}`;
+              issueListString += `>${createIssueLink(key)}\n`;
             }
           }
           issueListStrings.push(issueListString);
