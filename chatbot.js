@@ -30,7 +30,11 @@ exports.fn = {
     startRtm();
     // listener that handles incoming messages
     slackController.hears(['.*'], ['direct_message', 'direct_mention'], messageReceivedFn);
-    slackController.on('rtm_close', function () {
+    slackController.on('rtm_close', function (bot) {
+      bot.say({
+        channel: 'C90JDAY92',
+        text: 'still awake!'
+      });
       console.log('** The RTM api just closed. Trying reconnect...');
       startRtm();
     });
