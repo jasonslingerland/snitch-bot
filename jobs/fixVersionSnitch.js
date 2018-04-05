@@ -7,14 +7,17 @@ module.exports = {
  type: 'time-based',
  dependencies: [
    'slackChannel',
-   'jira'
+   'jira',
+   'mongo'
  ],
  slackChannel: 'test',
- invokeEvery: '2 h',
+ invokeEvery: '5 m',
  fn: function({
                 slackChannel,
-                jira
+                jira,
+                mongo
  }) {
+   const collection = mongo.collection('sentFixVersionNotifications');
    jira.makeJqlQuery({
      jql: 'fixVersion CHANGED DURING (-7d, now())',
      maxResults: 150,
@@ -25,7 +28,7 @@ module.exports = {
      fixVersionChangedIssues.forEach(issue => {
        fixVersionChangedIds.push(issue.key);
      });
-     getUnwantedChanges(fixVersionChangedIds, jira).
+     getUnwantedChanges(fixVersionChangedIds, jira, collection).
        then(result => {
          const changes = result.filter(change => {return change !== ''});
          console.log('building slack message');
@@ -53,43 +56,45 @@ const qaUserList = [
   'nkania'
 ];
 
-function getUnwantedChanges(fixVersionChangedIds, jira) {
+function getUnwantedChanges(fixVersionChangedIds, jira, collection) {
   let promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, jira));
+    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, jira, collection));
   }
   return Promise.all(promises);
 }
 
-function getUnwantedChangeInIssue(fixVersionChangedId, jira) {
-  return new Promise(function(resolve, reject) {
-    jira.get(`issue/${fixVersionChangedId}/changelog`).then(response => {
-      // reversing because we want the most recent change
-      for (let changeObject of response.data.values.reverse()) {
-        let userIsInQA = qaUserList.includes(changeObject.author.name);
-        for (let change of changeObject.items.reverse()) {
-          if (change.fieldId === 'fixVersions') {
-            if (userIsInQA) {
-              resolve('');
-            } else {
-              resolve({
-                author: changeObject.author.name,
-                changeString: buildChangeString(fixVersionChangedId,
-                                                change.fromString,
-                                                change.toString)
-              });
-            }
+async function getUnwantedChangeInIssue(fixVersionChangedId, jira, collection) {
+  let response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
+  // reversing because we want the most recent change
+  for (let changeObject of response.data.values.reverse()) {
+    let userIsInQA = qaUserList.includes(changeObject.author.name);
+    for (let change of changeObject.items.reverse()) {
+      if (change.fieldId === 'fixVersions') {
+        if (userIsInQA) {
+          return '';
+        } else {
+          const changeKey = {
+            author: changeObject.author.name,
+            timestamp: changeObject.created
+          };
+          const mongoResult = await collection.findOne(changeKey);
+          if (mongoResult === null) {
+            await collection.insertOne(changeKey);
+            return {
+              author: changeObject.author.name,
+              changeString: buildChangeString(fixVersionChangedId,
+                                              change.fromString,
+                                              change.toString)
+            };
+          } else {
+            return '';
           }
         }
       }
-      resolve('');
-    }).catch(error=> {
-      resolve({
-        author: 'error',
-        changeString: 'could not search:' + fixVersionChangedId
-      });
-    });
-  });
+    }
+  }
+  return '';
 }
 
 function buildChangeString(fixVersionChangedId, fromString, toString) {
