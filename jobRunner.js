@@ -76,7 +76,7 @@ function listenForSlackMessages(dependenciesObj) {
   return async (bot, message) => {
     //exit if we get the restart command
     if (message.text === '//restart') {
-      bot.reply(message, ':skull_and_crossbones:').then(() => {
+      bot.reply(message, ':skull_and_crossbones:', function() {
         process.exit(0)
       });
     }
