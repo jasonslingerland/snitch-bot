@@ -23,7 +23,7 @@ module.exports = {
    let totalNumIssues;
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `fixVersion CHANGED DURING (-${numDaysToLookBack}d, now())`,
+       jql: `fixVersion CHANGED DURING (-7d, now())`,
        maxResults: 250,
        fields: ['issuetype'],
        startAt: issuesReceived
