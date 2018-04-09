@@ -12,36 +12,36 @@ module.exports = {
  ],
  slackChannel: 'test',
  invokeEvery: '5 m',
- fn: function({
+ fn: async function({
                 slackChannel,
                 jira,
                 mongo
  }) {
    const collection = mongo.collection('sentFixVersionNotifications');
-   jira.makeJqlQuery({
-     jql: 'fixVersion CHANGED DURING (-7d, now())',
-     maxResults: 150,
-     fields: ['issuetype']
-   }).then(result => {
-     let fixVersionChangedIssues = result.data.issues;
-     let fixVersionChangedIds = [];
-     fixVersionChangedIssues.forEach(issue => {
-       fixVersionChangedIds.push(issue.key);
+   let fixVersionChangedIds = [];
+   let issuesReceived = 0;
+   let totalNumIssues;
+   do {
+     const jiraQueryResult = await jira.makeJqlQuery({
+       jql: `fixVersion CHANGED DURING (-${numDaysToLookBack}d, now())`,
+       maxResults: 250,
+       fields: ['issuetype'],
+       startAt: issuesReceived
      });
-     getUnwantedChanges(fixVersionChangedIds, jira, collection).
-       then(result => {
-         const changes = result.filter(change => {return change !== ''});
-         console.log('building slack message');
-         let slackMessage = buildSlackMessage(changes);
-         console.log(slackMessage);
-         if (slackMessage === '') {
-           return;
-         } else {
-           slackChannel(slackMessage).
-             then(console.log).catch(console.log);
-         }
-       }).catch(console.log);
-   }).catch(console.log);
+     issuesReceived += jiraQueryResult.data.maxResults;
+     totalNumIssues = jiraQueryResult.data.total;
+     fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
+   } while (issuesReceived < totalNumIssues);
+   getUnwantedChanges(fixVersionChangedIds, jira, collection).
+     then(result => {
+       const changes = result.filter(change => {return change !== ''});
+       console.log('building slack message');
+       let slackMessage = buildSlackMessage(changes);
+       console.log(slackMessage);
+       if (slackMessage !== '') {
+         slackChannel(slackMessage).then(console.log).catch(console.log);
+       }
+     }).catch(console.log);
  }
 };
 
