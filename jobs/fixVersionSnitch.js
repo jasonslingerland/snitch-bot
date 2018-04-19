@@ -21,18 +21,22 @@ module.exports = {
    let fixVersionChangedIds = [];
    let issuesReceived = 0;
    let totalNumIssues;
+   let issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `fixVersion CHANGED DURING (-7d, now())`,
+       jql: `fixVersion CHANGED DURING (-30m, now())`,
        maxResults: 250,
-       fields: ['issuetype'],
+       fields: ['summary'],
        startAt: issuesReceived
      });
      issuesReceived += jiraQueryResult.data.maxResults;
      totalNumIssues = jiraQueryResult.data.total;
      fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
+     jiraQueryResult.data.issues.forEach(issue => {
+       issueSummaries[issue.key] = issue.fields.summary;
+     });
    } while (issuesReceived < totalNumIssues);
-   getUnwantedChanges(fixVersionChangedIds, jira, collection).
+   getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
        console.log('building slack message');
@@ -56,15 +60,15 @@ const qaUserList = [
   'nkania'
 ];
 
-function getUnwantedChanges(fixVersionChangedIds, jira, collection) {
+function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
   let promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, jira, collection));
+    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
   }
   return Promise.all(promises);
 }
 
-async function getUnwantedChangeInIssue(fixVersionChangedId, jira, collection) {
+async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
   let response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
   // reversing because we want the most recent change
   for (let changeObject of response.data.values.reverse()) {
@@ -84,6 +88,7 @@ async function getUnwantedChangeInIssue(fixVersionChangedId, jira, collection) {
             return {
               author: changeObject.author.name,
               changeString: buildChangeString(fixVersionChangedId,
+                                              summary,
                                               change.fromString,
                                               change.toString)
             };
@@ -97,7 +102,7 @@ async function getUnwantedChangeInIssue(fixVersionChangedId, jira, collection) {
   return '';
 }
 
-function buildChangeString(fixVersionChangedId, fromString, toString) {
+function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
   const beginning = utils.createIssueLink(fixVersionChangedId);
   let end;
   if (fromString === null) {
@@ -107,6 +112,7 @@ function buildChangeString(fixVersionChangedId, fromString, toString) {
   } else {
     end = ` CHANGED from ${fromString} to ${toString}`;
   }
+  end = end + '\n>  ' + summary;
   return beginning + end;
 }
 
