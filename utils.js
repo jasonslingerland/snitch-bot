@@ -83,10 +83,17 @@ const getIssueCount = function ({
                                   jira
 }) {
   return new Promise(function (resolve, reject) {
-    const promise = normalizeJqlOrPromise(jqlOrPromise, 1, jira);
+    if (!Array.isArray(jqlOrPromise)) {
+      jqlOrPromise = [ jqlOrPromise ];
+    }
+    let promises = [];
+    jqlOrPromise.forEach(function(item) {
+      promises.push(normalizeJqlOrPromise(item, 1, jira));
+    });
+    const promise = Promise.all(promises);
     promise.then(result => {
       if (!Array.isArray(result)) {
-        result = [result];
+        result = [ result ];
       }
       let counts = [];
       for (let item of result) {
@@ -97,11 +104,7 @@ const getIssueCount = function ({
         }
         counts.push(item.data.total);
       }
-      if (counts[1] === undefined) {
-        resolve(counts[0]);
-      } else {
-        resolve(counts);
-      }
+      resolve(counts);
     }).catch(err => {
       console.log(err);
       if (err.response.data && err.response.data.errorMessages) {
@@ -130,4 +133,3 @@ module.exports = {
   somethingWentWrong: somethingWentWrong,
   listIssuesInResult: listIssuesInResult
 };
-

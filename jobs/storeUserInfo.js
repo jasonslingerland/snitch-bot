@@ -33,7 +33,7 @@ module.exports = {
       userInfoValue = userInfoValue.trim();
     }
     let userInfoKey;
-    let lowercaseMessageText = message.text.toLowerCase();
+    const lowercaseMessageText = message.text.toLowerCase();
     if (lowercaseMessageText.includes('git')) {
       userInfoKey = 'githubId';
     } else if (lowercaseMessageText.includes('jira')) {
@@ -48,12 +48,13 @@ module.exports = {
     userInfoStore[message.user][userInfoKey] = userInfoValue;
     const valueToSet = {};
     valueToSet[userInfoKey] = userInfoValue;
-    userInfoStore.collection.findOneAndUpdate({user: message.user},
-                                              {$set: valueToSet},
-                                              {
-                                                returnOriginal: false,
-                                                upsert: true
-                                              }).
+    userInfoStore.collection.findOneAndUpdate({
+        user: message.user
+      }, {
+        $set: valueToSet
+      }, {
+        returnOriginal: false,
+        upsert: true }).
     then(result => {
       console.log(result);
       bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `

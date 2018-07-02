@@ -20,10 +20,10 @@ module.exports = {
                   message
   }) {
     let messageText = 'I\'m here to help! Here\'s what I can do:\n';
-    for (let job of responsiveJobs) {
+    for (const job of responsiveJobs) {
       if (!job.hiddenFromHelp) {
         let phrasesString = '';
-        for (let phrase of job.phrases) {
+        for (const phrase of job.phrases) {
           phrasesString += " `" + phrase + "` ";
         }
         messageText += `*${job.name}*\n`;

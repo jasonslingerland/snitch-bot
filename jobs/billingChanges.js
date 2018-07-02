@@ -18,7 +18,7 @@ module.exports = {
   }) {
     jira.makeJqlQuery({
       jql: 'type = story and component = billing and createdDate >= -7d',
-      fields: ['issuetype']
+      fields: [ 'issuetype' ]
     }).then(result => {
       const issueKeys = utils.getIssueKeys(result.data.issues);
       let message = 'Oh boy! New billing changes!!\n';
@@ -33,4 +33,3 @@ module.exports = {
     }).catch(console.log);
   }
 };
-

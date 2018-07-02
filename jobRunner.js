@@ -146,4 +146,3 @@ function findJobFromMessage(message) {
 module.exports = {
   runJobs: runJobs
 };
-
