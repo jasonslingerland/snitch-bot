@@ -8,7 +8,8 @@ let fuzzyMatcher = FuzzySet();
 let phraseToJobMap = {};
 const userInfoStrings = {
   'githubId': 'Github ID',
-  'jiraUserId': 'Jira User ID'
+  'jiraUserId': 'Jira User ID',
+  'jiraTeam': 'Jira Team'
 };
 
 function runJobs(slackBot, dependenciesObj) {

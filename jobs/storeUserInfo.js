@@ -14,6 +14,7 @@ module.exports = {
     'set my Github id to: "12345"',
     'set my Github user ID to "12345"',
     'set my Jira user ID to "someone@onshape.com"',
+    'set my Jira team to "developers"'
   ],
   fn: function ({
                   bot,
@@ -36,6 +37,8 @@ module.exports = {
     const lowercaseMessageText = message.text.toLowerCase();
     if (lowercaseMessageText.includes('git')) {
       userInfoKey = 'githubId';
+    } else if (lowercaseMessageText.includes('jira') && lowercaseMessageText.includes('team')) {
+      userInfoKey = 'jiraTeam'
     } else if (lowercaseMessageText.includes('jira')) {
       userInfoKey = 'jiraUserId'
     } else {

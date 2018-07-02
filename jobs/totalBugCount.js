@@ -8,6 +8,7 @@ module.exports = {
   dependencies: [
     'jira'
   ],
+  disabled: true,
   hiddenFromHelp: false,
   phrases: [
     'give me the p2 p3 count',
@@ -38,10 +39,6 @@ module.exports = {
                 }) {
     const p2p3 = [];
     const filters = [];
-    if (!phraseMatch.includes('p2') && !phraseMatch.includes('p3')) {
-      p2p3.push('');
-      filters.push('status IN (Open, Reopened, "In Progress") AND type = bug');
-    }
     if (phraseMatch.includes('p2')) {
       p2p3.push(' p2');
       filters.push('filter = 15209');
@@ -50,9 +47,12 @@ module.exports = {
       p2p3.push(' p3');
       filters.push('filter = 17400');
     }
+    else if (!phraseMatch.includes('p2') && !phraseMatch.includes('p3')) {
+      p2p3.push('');
+      filters.push('status IN (Open, Reopened, "In Progress") AND type = bug');
+    }
     let reply = '';
     function getReply(counts) {
-      console.log(counts);
       p2p3.forEach((bugType, index) => {
       reply += `The total number of open${ bugType } bugs is \`${ counts[index] }\`\n`});
       reply = reply.trim();
@@ -60,9 +60,9 @@ module.exports = {
     }
     utils.getIssueCount({
       jqlOrPromise: filters,
-      bot: bot,
-      message: message,
-      jira: jira
+      bot,
+      message,
+      jira
     }).
     then(counts => {
       bot.reply(message, getReply(counts));

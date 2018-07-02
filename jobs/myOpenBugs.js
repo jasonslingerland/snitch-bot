@@ -10,60 +10,80 @@ module.exports = {
     'jira'
   ],
   userInfoNeeded: [
-    'jiraUserId'
+    'jiraUserId',
+    'jiraTeam'
   ],
   hiddenFromHelp: false,
   phrases: [
-    'give me my p2 p3 count',
-    'what is my p2 p3 count',
-    'my bug count',
-    'my p2 p3 count',
-    'my p2 count',
-    'my p3 count',
-    'my bugs',
-    'my open bugs',
-    'my p2s',
-    'my p3s',
-    'my p2s and p3s',
-    'how many p2 bugs do I have',
-    'how many p3 bugs do I have',
-    'how many p2 and p3 bugs do I have',
-    'how many open bugs do I have'
+    'give me the p2 p3 count',
+    'what is the total p2 p3 count',
+    'total bug count',
+    'bug count',
+    'p2 p3 count',
+    'p2 count',
+    'p3 count',
+    'p2 p3 total',
+    'p2 total',
+    'p3 total',
+    'bug total',
+    'how many p2s are there',
+    'how many p3s are there',
+    'how many p2s and p3s are there',
+    'how many bugs are there',
+    'how many p2 and p3 bugs are there',
+    'how many p2 bugs do we have',
+    'how many p3 bugs do we have',
+    'how many p2 and p3 bugs do we have'
   ],
   fn: function ({
                   bot,
                   message,
                   jira,
-                  userInfo,
-                  phraseMatch
+                  userInfo
                 }) {
     const p2p3 = [];
     const filters = [];
-    let jqlOrPromise = `assignee = ${userInfo.jiraUserId} AND status IN (Open, Reopened, "In Progress") AND type = bug`;
-    if (phraseMatch.includes('p2')) {
-      p2p3.push('p2');
-      filters.push('filter = 15209');
+    let assignee = '';
+    let reply = '';
+    const messageText = message.text.toLowerCase();
+    if (messageText.includes('team')) {
+      assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
+      reply += `<@${message.user}>, your team has: \n`;
     }
-    if (phraseMatch.includes('p3')) {
-      p2p3.push('p3');
-      filters.push('filter = 17400');
+    else if (messageText.includes('my') || messageText.includes('mine') || messageText.includes(' i ')) {
+      assignee = `assignee = ${ userInfo.jiraUserId } AND `;
+      reply += `<@${message.user}>, you have: \n`;
     }
-    if (filters.length > 0) {
-      jqlOrPromise += ' AND (' + filters.join(' OR ') +')';
+    else {
+      reply += 'There are: \n'
+    };
+
+    if (messageText.includes('p2')) {
+      p2p3.push(' p2');
+      filters.push(`${ assignee }filter = 15209`);
     }
-    console.log(jqlOrPromise);
+    if (messageText.includes('p3')) {
+      p2p3.push(' p3');
+      filters.push(`${ assignee }filter = 17400`);
+    }
+    else if (!messageText.includes('p2') && !messageText.includes('p3')) {
+      p2p3.push('');
+      filters.push(`${ assignee }status IN (Open, Reopened, "In Progress") AND type = bug`);
+    }
+    function getReply(counts) {
+      p2p3.forEach((bugType, index) => {
+      reply += `\`${ counts[index] }\` open${ bugType } bugs\n`});
+      reply = reply.trim();
+      return reply;
+    }
     utils.getIssueCount({
-      jqlOrPromise,
+      jqlOrPromise: filters,
       bot,
       message,
       jira
     }).
-    then(count => {
-      let plural = '';
-      if (count[0] > 1) {
-        plural = 's'
-      };
-      bot.reply(message, `<@${message.user}> you have \`${count[0]}\` open ${ p2p3.join(' and ') } bug${plural}.`);
+    then(counts => {
+      bot.reply(message, getReply(counts));
     }).catch(response => {
       console.log(response);
     });
