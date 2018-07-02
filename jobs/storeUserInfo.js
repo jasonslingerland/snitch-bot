@@ -57,8 +57,8 @@ module.exports = {
         $set: valueToSet
       }, {
         returnOriginal: false,
-        upsert: true }).
-    then(result => {
+        upsert: true
+      }).then(result => {
       console.log(result);
       bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
         + 'If this isn\'t correct please double check your spelling and formatting and try again.');
