@@ -18,7 +18,7 @@ const normalizeJqlOrPromise = function (jqlOrPromise, maxResults, jira) {
     if (typeof jqlOrPromise === 'string') {
       promise = jira.makeJqlQuery({
         jql: jqlOrPromise,
-        fields: ['issuetype'],
+        fields: ['issuetype', 'summary'],
         maxResults: maxResults
       });
     } else {
@@ -34,8 +34,15 @@ const listIssuesInResult = function ({
                                        jqlOrPromise
                                      }) {
   return new Promise(function (resolve, reject) {
-    normalizeJqlOrPromise(jqlOrPromise, 100, jira).
-    then(response => {
+    if (!Array.isArray(jqlOrPromise)) {
+      jqlOrPromise = [ jqlOrPromise ];
+    }
+    let promises = [];
+    jqlOrPromise.forEach(function(item) {
+      promises.push(normalizeJqlOrPromise(item, 100, jira));
+    });
+    const promise = Promise.all(promises);
+    promise.then(response => {
       if (!Array.isArray(response)) {
         response = [response];
       }
@@ -48,21 +55,16 @@ const listIssuesInResult = function ({
         } else {
           let issueListString = '';
           if (item.data === undefined || item.data.issues[0] === undefined) {
-            issueListString = '>No issues.';
+            issueListString = 'No issues.';
           } else {
-            const issueKeys = getIssueKeys(item.data.issues);
-            for (const key of issueKeys) {
-              issueListString += `>${createIssueLink(key)}\n`;
-            }
+            item.data.issues.forEach(issue => {
+              issueListString += `${createIssueLink(issue.key)} ${issue.fields.summary}\n`;
+            });
           }
           issueListStrings.push(issueListString);
         }
       }
-      if (issueListStrings[1] === undefined) {
-        resolve(issueListStrings[0]);
-      } else {
-        resolve(issueListStrings);
-      }
+      resolve(issueListStrings);
     }).catch(err => {
       console.log(err);
       if (err.response.data && err.response.data.errorMessages) {

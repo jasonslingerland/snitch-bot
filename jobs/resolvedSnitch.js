@@ -11,7 +11,7 @@ module.exports = {
    'mongo'
  ],
  slackChannel: 'test',
- invokeEvery: '1 m',
+ invokeEvery: '5 m',
  fn: async function({
                 slackChannel,
                 jira,
@@ -24,7 +24,7 @@ module.exports = {
    let issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: 'status CHANGED DURING (-30m, now()) AND issuetype in (Epic, Improvement, Story, "Technical task") AND status in (Resolved, "In QA Testing")',
+       jql: 'status CHANGED DURING (-30m, now()) AND project in ("AND", BEL, IOS, WEB, TRN) AND issuetype in (Epic, Improvement, Story, "Technical task") AND status in (Resolved, "In QA Testing")',
        maxResults: 250,
        fields: ['summary'],
        startAt: issuesReceived

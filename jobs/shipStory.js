@@ -49,7 +49,14 @@ module.exports = {
       jira: jira
     }).
     then(issueList => {
-      bot.reply(message, `*To ship ${ project }${ issueNumber }, we need to fix*:\n${issueList}`);
+      const reply = {
+        text: `*To ship ${ project.toUpperCase() }${ issueNumber }, we need to fix*:\n`,
+        attachments: [ {
+          color: ((issueList[0] === 'No issues.') ? 'good' : 'danger'),
+          text: `${issueList}`
+        } ]
+      };
+      bot.reply(message, reply);
     }).catch(err => {
       console.log(err.data);
     });

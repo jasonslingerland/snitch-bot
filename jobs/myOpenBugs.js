@@ -15,6 +15,9 @@ module.exports = {
   ],
   hiddenFromHelp: false,
   phrases: [
+    'what are my bugs',
+    'what are my p2 bugs',
+    'what are my p3 bugs',
     'give me the p2 p3 count',
     'what is the total p2 p3 count',
     'total bug count',
@@ -45,34 +48,42 @@ module.exports = {
     const filters = [];
     let assignee = '';
     let reply = '';
+    let personal = '';
     const messageText = message.text.toLowerCase();
     if (messageText.includes('team')) {
       assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
       reply += `<@${message.user}>, your team has: \n`;
+      personal = 'my team\'s';
     }
     else if (messageText.includes('my') || messageText.includes('mine') || messageText.includes(' i ')) {
       assignee = `assignee = ${ userInfo.jiraUserId } AND `;
       reply += `<@${message.user}>, you have: \n`;
+      personal = 'my'
     }
     else {
       reply += 'There are: \n'
     };
 
     if (messageText.includes('p2')) {
-      p2p3.push(' p2');
+      p2p3.push(' P2');
       filters.push(`${ assignee }filter = 15209`);
     }
     if (messageText.includes('p3')) {
-      p2p3.push(' p3');
+      p2p3.push(' P3');
       filters.push(`${ assignee }filter = 17400`);
     }
     else if (!messageText.includes('p2') && !messageText.includes('p3')) {
       p2p3.push('');
       filters.push(`${ assignee }status IN (Open, Reopened, "In Progress") AND type = bug`);
     }
+
+    const suggestLinks = p2p3.join(' and');
     function getReply(counts) {
       p2p3.forEach((bugType, index) => {
       reply += `\`${ counts[index] }\` open${ bugType } bugs\n`});
+      if (suggestLinks && personal) {
+        reply += `For more details, ask me \`give me ${ personal }${ suggestLinks } links\``
+      };
       reply = reply.trim();
       return reply;
     }

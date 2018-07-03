@@ -14,7 +14,8 @@ module.exports = {
   hiddenFromHelp: false,
   phrases: [
     'what are my stories this sprint?',
-    'stories this sprint'
+    'stories this sprint',
+    'what are my stories'
   ],
   fn: function ({
                   bot,
@@ -29,7 +30,14 @@ module.exports = {
       jira: jira
     }).
     then(issueList => {
-      bot.reply(message, `*Your stories in this sprint are*:\n${issueList}`);
+      const reply = {
+        text: `*Your stories in this sprint are*:\n`,
+        attachments: [ {
+          color: 'good',
+          text: `${issueList}`
+        } ]
+      };
+      bot.reply(message, reply);
     }).catch(err => {
       console.log(err.data);
     });

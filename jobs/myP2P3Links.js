@@ -9,48 +9,60 @@ module.exports = {
     'jira'
   ],
   userInfoNeeded: [
-    'jiraUserId'
+    'jiraUserId',
+    'jiraTeam'
   ],
   hiddenFromHelp: false,
   phrases: [
     'p2 links',
     'p3 links',
     'give me p2 links',
-    'give me p3 links'
+    'give me p3 links',
+    'give me my p2 details',
+    'give me details for my p3s'
   ],
   fn: function ({
                   bot,
                   message,
                   jira,
-                  phraseMatch,
                   userInfo
                 }) {
-    let filterPath;
-    let priorityString;
-    if (phraseMatch.includes('p2')) {
-      filterPath = 'filter/15209';
-      priorityString = 'P2';
-    } else {
-      filterPath = 'filter/17400';
-      priorityString = 'P3'
+    const filters = [];
+    let assignee = `assignee = ${ userInfo.jiraUserId } AND `;
+    let team = '';
+    const p2p3 = [];
+    const messageText = message.text.toLowerCase();
+    if (messageText.includes('team')) {
+      assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
+      team = ' team\'s';
     }
-    jira.get(filterPath).
-    then(filterResults => {
-      console.log(filterResults);
-      utils.listIssuesInResult({
-        jqlOrPromise: `assignee = ${userInfo.jiraUserId} AND ` +filterResults.data.jql,
-        bot: bot,
-        message: message,
-        jira: jira
-      }).
-      then(issueList => {
-        bot.reply(message, `*Your ${priorityString} bugs are*:\n${issueList}`);
-      }).catch(err => {
-        console.log('$$$$$$$$');
-      });
+    if (messageText.includes('p2')) {
+      p2p3.push(' P2');
+      filters.push(`${ assignee }filter = 15209`);
+    }
+    if (messageText.includes('p3')) {
+      p2p3.push(' P3');
+      filters.push(`${ assignee }filter = 17400`);
+    }
+    const priorityString = p2p3.join(' and');
+    console.log(filters);
+    utils.listIssuesInResult({
+      jqlOrPromise: filters,
+      bot,
+      message,
+      jira
+    }).
+    then(issueList => {
+      const reply = {
+        text: `*Your${ team }${ priorityString } bugs are*:\n`,
+        attachments: [ {
+          color: ((issueList[0] === 'No issues.') ? 'good' : 'danger'),
+          text: `${issueList}`
+        } ]
+      };
+      bot.reply(message, reply);
     }).catch(err => {
       console.log(err);
-      utils.somethingWentWrong(bot, message);
     });
   }
 };
