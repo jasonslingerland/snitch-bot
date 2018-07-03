@@ -2,8 +2,8 @@
 const utils = require('../utils');
 
 module.exports = {
-  name: 'closeBug',
-  description: 'gives links to issues that need to be fixed for a particular bug to ship',
+  name: 'shipStory',
+  description: 'gives links to issues that need to be fixed for a particular story to ship',
   type: 'responsive',
   dependencies: [
     'jira'

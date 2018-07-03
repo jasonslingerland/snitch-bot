@@ -16,6 +16,7 @@ module.exports = {
   phrases: [
     'p2 links',
     'p3 links',
+    'give me my team\'s p2 links',
     'give me p2 links',
     'give me p3 links',
     'give me my p2 details',

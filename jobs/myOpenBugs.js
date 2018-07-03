@@ -4,7 +4,7 @@ const utils = require('../utils');
 
 module.exports = {
   name: 'myOpenBugs',
-  description: 'lists number of open bugs that a user has',
+  description: 'lists number of open bugs of a given priority that the entire project, a user or a team has',
   type: 'responsive',
   dependencies: [
     'jira'
@@ -15,9 +15,11 @@ module.exports = {
   ],
   hiddenFromHelp: false,
   phrases: [
+    'how many p2s are there',
     'what are my bugs',
     'what are my p2 bugs',
     'what are my p3 bugs',
+    'what are my team\'s p2s',
     'give me the p2 p3 count',
     'what is the total p2 p3 count',
     'total bug count',
@@ -29,7 +31,6 @@ module.exports = {
     'p2 total',
     'p3 total',
     'bug total',
-    'how many p2s are there',
     'how many p3s are there',
     'how many p2s and p3s are there',
     'how many bugs are there',

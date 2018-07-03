@@ -1,8 +1,8 @@
 'use strict';
 
 module.exports = {
-  name: 'hello',
-  description: 'say hello',
+  name: 'releaseProcess',
+  description: 'links to the confluence article about the release process',
   type: 'responsive',
   dependencies: [
   ],

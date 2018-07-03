@@ -7,7 +7,7 @@ module.exports = {
   dependencies: [
     'responsiveJobs'
   ],
-  hiddenFromHelp: false, //TODO: add this to docs
+  hiddenFromHelp: true, //TODO: add this to docs
   phrases: [
     'help',
     'help me',
@@ -23,7 +23,7 @@ module.exports = {
     for (const job of responsiveJobs) {
       if (!job.hiddenFromHelp) {
         let phrasesString = '';
-        for (const phrase of job.phrases) {
+        for (const phrase of job.phrases.slice(0, 5)) {
           phrasesString += " `" + phrase + "` ";
         }
         messageText += `*${job.name}*\n`;
