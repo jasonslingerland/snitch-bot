@@ -47,19 +47,35 @@ module.exports = {
                 }) {
     const p2p3 = [];
     const filters = [];
+
     let assignee = '';
     let reply = '';
     let personal = '';
+    let isTeam = false;
+    let isMine = false;
     const messageText = message.text.toLowerCase();
     if (messageText.includes('team')) {
+      isTeam = true}
+    if (messageText.includes('my') || messageText.includes('mine')) {
+      isMine = true}
+    if (isTeam && isMine) {
       assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
       reply += `<@${message.user}>, your team has: \n`;
       personal = 'my team\'s';
     }
-    else if (messageText.includes('my') || messageText.includes('mine') || messageText.includes(' i ')) {
+    else if (isMine) {
       assignee = `assignee = ${ userInfo.jiraUserId } AND `;
       reply += `<@${message.user}>, you have: \n`;
       personal = 'my'
+    }
+    else if (isTeam) {
+      const team = utils.getTeamFromMessageText(messageText);
+      if (!team) {
+        bot.reply(message, 'Sorry, I\'m not what team you\'re referring to. Type `@QA-Bot list teams` for the ones that I know.');
+        return };
+      assignee = `assignee in membersOf("${ team }") AND `;
+      personal = `the ${ team }`
+      reply += `"${ team }" has: \n`;
     }
     else {
       reply += 'There are: \n'

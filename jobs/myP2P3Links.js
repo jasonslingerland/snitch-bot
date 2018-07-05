@@ -20,7 +20,8 @@ module.exports = {
     'give me p2 links',
     'give me p3 links',
     'give me my p2 details',
-    'give me details for my p3s'
+    'give me details for my p3s',
+    'give me the details for the team\'s p3 bugs'
   ],
   fn: function ({
                   bot,
@@ -30,13 +31,28 @@ module.exports = {
                 }) {
     const filters = [];
     let assignee = `assignee = ${ userInfo.jiraUserId } AND `;
-    let team = '';
+    let ownershipString = '';
+    let isTeam = false;
+    let isMine = false;
     const p2p3 = [];
     const messageText = message.text.toLowerCase();
     if (messageText.includes('team')) {
+      isTeam = true}
+    if (messageText.includes('my') || messageText.includes('mine')) {
+      isMine = true}
+    if (isTeam && isMine) {
       assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
-      team = ' team\'s';
+      ownershipString = 'Your team\'s';
     }
+    else if (isTeam) {
+      const team = utils.getTeamFromMessageText(messageText);
+      if (!team) {
+        bot.reply(message, 'Sorry, I\'m not what team you\'re referring to. Type `@QA-Bot list teams` for the ones that I know.');
+        return };
+      assignee = `assignee in membersOf("${ team }") AND `;
+      ownershipString = `${ team }'s`;
+    };
+
     if (messageText.includes('p2')) {
       p2p3.push(' P2');
       filters.push(`${ assignee }filter = 15209`);
@@ -55,7 +71,7 @@ module.exports = {
     }).
     then(issueList => {
       const reply = {
-        text: `*Your${ team }${ priorityString } bugs are*:\n`,
+        text: `*${ ownershipString }${ priorityString } bugs are*:\n`,
         attachments: [ {
           color: ((issueList[0] === 'No issues.') ? 'good' : 'danger'),
           text: `${issueList}`

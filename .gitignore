@@ -1,6 +1,7 @@
 node_modules
 npm-debug.log
 creds.js
+google_creds.json
 data/*
 .DS_store
 *.swp
@@ -8,4 +9,3 @@ data/*
 test.js
 run.sh
 kill.sh
-

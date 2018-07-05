@@ -104,7 +104,7 @@ function listenForSlackMessages(dependenciesObj) {
           bot.reply(message,
             `Sorry, I can't do that without your ${userInfoStrings[userInfoNeeded]}.\n`
             + 'Give it to me by saying something like: '
-            + `\`@Amazing-Bot set my ${userInfoStrings[userInfoNeeded]} to "something"\`.`
+            + `\`@QA-Bot set my ${userInfoStrings[userInfoNeeded]} to "something"\`.`
             + ' Remember to include the quotes.');
           userInfoPopulated = false;
         } else {
@@ -130,7 +130,7 @@ function findJobFromMessage(message) {
                    message,
                    bot
     }) {
-      bot.reply(message, 'Sorry, not sure what you want. type `@Amazing-Bot help` for a list of things I can do.');
+      bot.reply(message, 'Sorry, not sure what you want. type `@QA-Bot help` for a list of things I can do.');
     },
     dependencies: []
   };
