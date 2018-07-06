@@ -3,7 +3,7 @@ const utils = require('../utils');
 
 module.exports = {
  name: 'resolved snitch',
- description: 'checks if anyone has ',
+ description: 'checks to see if anyone resolved a story',
  type: 'time-based',
  dependencies: [
    'slackChannel',
@@ -24,7 +24,7 @@ module.exports = {
    let issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: 'status CHANGED DURING (-30m, now()) AND project in ("AND", BEL, IOS, WEB, TRN) AND issuetype in (Epic, Improvement, Story, "Technical task") AND status in (Resolved, "In QA Testing")',
+       jql: `status CHANGED DURING (-30m, now())`,
        maxResults: 250,
        fields: ['summary'],
        startAt: issuesReceived
@@ -36,10 +36,9 @@ module.exports = {
        issueSummaries[issue.key] = issue.fields.summary;
      });
    } while (issuesReceived < totalNumIssues);
-   getChanges(fixVersionChangedIds, jira, collection, issueSummaries).
+   getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
-       console.log('building slack message');
        let slackMessage = buildSlackMessage(changes);
        console.log(slackMessage);
        if (slackMessage !== '') {
@@ -49,36 +48,40 @@ module.exports = {
  }
 };
 
-function getChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
+function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
   let promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
+    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
   }
   return Promise.all(promises);
 }
 
-async function getChangeInIssue(fixVersionChangedId, summary, jira, collection) {
+async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
   let response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
   // reversing because we want the most recent change
   for (let changeObject of response.data.values.reverse()) {
     for (let change of changeObject.items.reverse()) {
       if (change.fieldId === 'status') {
-        const changeKey = {
-          author: changeObject.author.name,
-          timestamp: changeObject.created
-        };
-        const mongoResult = await collection.findOne(changeKey);
-        if (mongoResult === null) {
-          await collection.insertOne(changeKey);
-          return {
-            author: changeObject.author.name,
-            changeString: buildChangeString(fixVersionChangedId,
-                                            summary,
-                                            change.fromString,
-                                            change.toString)
-          };
-        } else {
+        if (change.toString !== 'Resolved' && change.toString !== 'In QA Testing') {
           return '';
+        } else {
+          const changeKey = {
+            author: changeObject.author.name,
+            timestamp: changeObject.created
+          };
+          const mongoResult = await collection.findOne(changeKey);
+          if (mongoResult === null) {
+            await collection.insertOne(changeKey);
+            return {
+              author: changeObject.author.name,
+              changeString: buildChangeString(fixVersionChangedId,
+                                              summary,
+                                              change.fromString,
+                                              change.toString)
+            };
+          } else {
+            return '';
+          }
         }
       }
     }
@@ -88,11 +91,12 @@ async function getChangeInIssue(fixVersionChangedId, summary, jira, collection) 
 
 function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
   const beginning = utils.createIssueLink(fixVersionChangedId);
-  const end = ` status is now ${toString} :tada:` + '\n>  ' + summary;
+  const end = ` status CHANGED from ${fromString} to ${toString}` + '\n>  ' + summary;
   return beginning + end;
 }
 
 function buildSlackMessage(changes) {
+  console.log('building slack message');
   let consolidatedChanges = {};
   for (let change of changes) {
     let entry = consolidatedChanges[change.author];

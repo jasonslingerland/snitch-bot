@@ -74,7 +74,7 @@ module.exports = {
         bot.reply(message, 'Sorry, I\'m not what team you\'re referring to. Type `@QA-Bot list teams` for the ones that I know.');
         return };
       assignee = `assignee in membersOf("${ team }") AND `;
-      personal = `the ${ team }`
+      personal = `the ${ team } team's`
       reply += `"${ team }" has: \n`;
     }
     else {

@@ -26,10 +26,16 @@ module.exports = {
      TODO: either add a better way to automagically keep up with user info stuff, or add to docs that this needs
      to stay updated
      */
+    let notExactMatch = false;
     let userInfoValue = message.text.split(/[“”"'`‘’]/)[1];
-    if (userInfoValue === undefined) {
-      utils.somethingWentWrong(bot, message)();
-      return;
+    if (!userInfoValue) {
+      let messageWords = message.text.split(' ');
+      console.log(messageWords);
+      userInfoValue = messageWords[messageWords.indexOf('to') + 1];
+      notExactMatch = true;
+      if (!userInfoValue) {
+        utils.somethingWentWrong(bot, message)();
+        return }
     } else {
       userInfoValue = userInfoValue.trim();
     }
@@ -39,6 +45,7 @@ module.exports = {
       userInfoKey = 'githubId';
     } else if (lowercaseMessageText.includes('jira') && lowercaseMessageText.includes('team')) {
       userInfoKey = 'jiraTeam'
+      userInfoValue = utils.matchTeam(userInfoValue);
     } else if (lowercaseMessageText.includes('jira')) {
       userInfoKey = 'jiraUserId'
     } else {
@@ -61,7 +68,7 @@ module.exports = {
       }).then(result => {
       console.log(result);
       bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
-        + 'If this isn\'t correct please double check your spelling and formatting and try again.');
+        + `If this isn\'t correct please double check your spelling ${ (notExactMatch) ? 'or enclose your value in quotes' : '' } and try again`);
     }).catch(utils.somethingWentWrong(bot, message));
   }
 };

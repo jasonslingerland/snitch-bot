@@ -31,7 +31,7 @@ module.exports = {
                 }) {
     const filters = [];
     let assignee = `assignee = ${ userInfo.jiraUserId } AND `;
-    let ownershipString = '';
+    let ownershipString = 'Your';
     let isTeam = false;
     let isMine = false;
     const p2p3 = [];
@@ -50,7 +50,7 @@ module.exports = {
         bot.reply(message, 'Sorry, I\'m not what team you\'re referring to. Type `@QA-Bot list teams` for the ones that I know.');
         return };
       assignee = `assignee in membersOf("${ team }") AND `;
-      ownershipString = `${ team }'s`;
+      ownershipString = `The "${ team }" team's`;
     };
 
     if (messageText.includes('p2')) {
@@ -61,8 +61,9 @@ module.exports = {
       p2p3.push(' P3');
       filters.push(`${ assignee }filter = 17400`);
     }
+
+    const jql = utils.jiraBaseUrl + '/issues/?jql=' + encodeURIComponent(filters.join(' AND '));
     const priorityString = p2p3.join(' and');
-    console.log(filters);
     utils.listIssuesInResult({
       jqlOrPromise: filters,
       bot,
@@ -71,7 +72,7 @@ module.exports = {
     }).
     then(issueList => {
       const reply = {
-        text: `*${ ownershipString }${ priorityString } bugs are*:\n`,
+        text: `*<${ jql }|${ ownershipString }${ priorityString } bugs> are*:\n`,
         attachments: [ {
           color: ((issueList[0] === 'No issues.') ? 'good' : 'danger'),
           text: `${issueList}`
