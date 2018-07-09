@@ -9,9 +9,11 @@ const slackBot = require('./chatbot').fn.slackBot;
 const UserInfoStore = require('./mongoInit').UserInfoStore;
 
 const slack = axios.create({
-  headers: { 'Content-type': 'application/json' }
+  headers: {
+    'Content-type': 'application/json'
+  }
 });
-let jira = axios.create({
+const jira = axios.create({
   headers: {
     'Content-type': 'application/json',
     'Authorization': `Basic ${base64UserPass}`
@@ -21,7 +23,7 @@ let jira = axios.create({
 axiosRetry(jira, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
-  retryCondition: (error) => {
+  retryCondition: () => {
     /*
       retry on everything because jira gives me 401s for some mystifying reason
       and now I don't trust their status codes...
@@ -29,8 +31,6 @@ axiosRetry(jira, {
     return true;
   }
 });
-
-// jira.get(`issue/BEL-89197/changelog`).then(console.log);
 
 function createPostMessageFn(slackHookUrl) {
   return function (message) {
@@ -41,7 +41,7 @@ function createPostMessageFn(slackHookUrl) {
   };
 }
 
-let postSlackMessageFunctions = {};
+const postSlackMessageFunctions = {};
 for (const slackChannelName in creds.hookUrls) {
   postSlackMessageFunctions[slackChannelName] =
     createPostMessageFn(creds.hookUrls[slackChannelName]);

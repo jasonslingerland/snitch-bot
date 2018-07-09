@@ -50,7 +50,7 @@ const teamNames = [
 
 const teamMatcher = FuzzySet();
 
-let teamNameMap = {}
+const teamNameMap = {}
 
 teamNames.forEach(team => {
   if (team.slice(-5) === '-team') {
@@ -70,7 +70,7 @@ const createIssueLink = function (idOrKey) {
 };
 
 const getIssueKeys = function (issues) {
-  let issueKeys = [];
+  const issueKeys = [];
   issues.forEach(issue => {
     issueKeys.push(issue.key);
   });
@@ -82,13 +82,19 @@ const normalizeJqlOrPromise = function (jqlOrPromise, maxResults, jira) {
     if (typeof jqlOrPromise === 'string') {
       promise = jira.makeJqlQuery({
         jql: jqlOrPromise,
-        fields: ['issuetype', 'summary'],
+        fields: [ 'issuetype', 'summary' ],
         maxResults: maxResults
       });
     } else {
       promise = jqlOrPromise;
     }
     return promise;
+};
+
+const somethingWentWrong = function (bot, message) {
+  return function() {
+    bot.reply(message, 'Sorry, something went wrong.');
+  }
 };
 
 const listIssuesInResult = function ({
@@ -101,20 +107,20 @@ const listIssuesInResult = function ({
     if (!Array.isArray(jqlOrPromise)) {
       jqlOrPromise = [ jqlOrPromise ];
     }
-    let promises = [];
+    const promises = [];
     jqlOrPromise.forEach(function(item) {
       promises.push(normalizeJqlOrPromise(item, 100, jira));
     });
     const promise = Promise.all(promises);
     promise.then(response => {
       if (!Array.isArray(response)) {
-        response = [response];
+        response = [ response ];
       }
-      let issueListStrings = [];
-      for (let item of response) {
+      const issueListStrings = [];
+      for (const item of response) {
         if (item.data && item.data.warningMessages) {
           bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-            + `Received error message from jira:\n \`${item.data.warningMessages.join('\`\n')}\``);
+            + `Received error message from jira:\n \`${item.data.warningMessages.join('`\n')}\``);
           reject(item);
         } else {
           let issueListString = '';
@@ -133,7 +139,7 @@ const listIssuesInResult = function ({
       console.log(err);
       if (err.response.data && err.response.data.errorMessages) {
         bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-           + `Received error message from jira:\n \`${err.response.data.errorMessages.join('\`\n')}\``);
+           + `Received error message from jira:\n \`${err.response.data.errorMessages.join('`\n')}\``);
       } else {
         somethingWentWrong(bot, message)();
       }
@@ -152,7 +158,7 @@ const getIssueCount = function ({
     if (!Array.isArray(jqlOrPromise)) {
       jqlOrPromise = [ jqlOrPromise ];
     }
-    let promises = [];
+    const promises = [];
     jqlOrPromise.forEach(function(item) {
       promises.push(normalizeJqlOrPromise(item, 1, jira));
     });
@@ -161,11 +167,11 @@ const getIssueCount = function ({
       if (!Array.isArray(result)) {
         result = [ result ];
       }
-      let counts = [];
-      for (let item of result) {
+      const counts = [];
+      for (const item of result) {
         if (item.data && item.data.warningMessages) {
           bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-            + `Received error message from jira:\n \`${item.data.warningMessages.join('\`\n')}\``);
+            + `Received error message from jira:\n \`${item.data.warningMessages.join('`\n')}\``);
           reject(item);
         }
         counts.push(item.data.total);
@@ -175,7 +181,7 @@ const getIssueCount = function ({
       console.log(err);
       if (err.response.data && err.response.data.errorMessages) {
         bot.reply(message, `<@${message.user}> sorry, something went wrong. `
-          + `Received error message from jira:\n \`${err.response.data.errorMessages.join('\`\n')}\``);
+          + `Received error message from jira:\n \`${err.response.data.errorMessages.join('`\n')}\``);
       } else {
         somethingWentWrong(bot, message)();
       }
@@ -183,12 +189,6 @@ const getIssueCount = function ({
       bot.reply(message, `Sorry, something went wrong.`);
     });
   });
-};
-
-const somethingWentWrong = function (bot, message) {
-  return function() {
-    bot.reply(message, 'Sorry, something went wrong.');
-  }
 };
 
 const matchTeam = function (teamGuess) {

@@ -29,7 +29,7 @@ module.exports = {
     let notExactMatch = false;
     let userInfoValue = message.text.split(/[“”"'`‘’]/)[1];
     if (!userInfoValue) {
-      let messageWords = message.text.split(' ');
+      const messageWords = message.text.split(' ');
       console.log(messageWords);
       userInfoValue = messageWords[messageWords.indexOf('to') + 1];
       notExactMatch = true;
@@ -68,7 +68,7 @@ module.exports = {
       }).then(result => {
       console.log(result);
       bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
-        + `If this isn\'t correct please double check your spelling ${ (notExactMatch) ? 'or enclose your value in quotes' : '' } and try again`);
+        + `If this isn't correct please double check your spelling ${ (notExactMatch) ? 'or enclose your value in quotes' : '' } and try again`);
     }).catch(utils.somethingWentWrong(bot, message));
   }
 };

@@ -3,9 +3,9 @@
 const every = require('schedule').every;
 const fs = require('fs');
 const normalizedPath = require("path").join(__dirname, "jobs");
-let FuzzySet = require('fuzzyset.js');
-let fuzzyMatcher = FuzzySet();
-let phraseToJobMap = {};
+const FuzzySet = require('fuzzyset.js');
+const fuzzyMatcher = FuzzySet();
+const phraseToJobMap = {};
 const userInfoStrings = {
   'githubId': 'Github ID',
   'jiraUserId': 'Jira User ID',
@@ -15,7 +15,7 @@ const userInfoStrings = {
 function runJobs(slackBot, dependenciesObj) {
   dependenciesObj.userInfoStrings = userInfoStrings;
   // getting jobs from the directory
-  let jobs = [];
+  const jobs = [];
   fs.readdirSync(normalizedPath).forEach(function(file) {
     if (file.endsWith('.js')) {
       const job = require('./jobs/' + file);
@@ -26,8 +26,8 @@ function runJobs(slackBot, dependenciesObj) {
   });
 
   console.log('Loading jobs...');
-  let responsiveJobs = [];
-  for (let job of jobs) {
+  const responsiveJobs = [];
+  for (const job of jobs) {
     if (job.type === 'time-based') {
       every(job.invokeEvery).do(function () {
         console.log(`invoking ${job.name}`);
@@ -47,8 +47,8 @@ function runJobs(slackBot, dependenciesObj) {
 }
 
 function setupFuzzyMatcher(responsiveJobs) {
-  for (let job of responsiveJobs) {
-    for (let phrase of job.phrases) {
+  for (const job of responsiveJobs) {
+    for (const phrase of job.phrases) {
       fuzzyMatcher.add(phrase);
       phraseToJobMap[phrase] = job;
     }
@@ -56,9 +56,9 @@ function setupFuzzyMatcher(responsiveJobs) {
 }
 
 function bundleDependencies(dependenciesObj, jobDependencies, optionalSlackChannel) {
-  let dependencies = {};
+  const dependencies = {};
   const slackChannel = 'slackChannel';
-  for (let dependencyName of jobDependencies) {
+  for (const dependencyName of jobDependencies) {
     if (dependencyName === slackChannel) {
       const postSlackMessageFn = dependenciesObj.postSlackMessageFunctions[optionalSlackChannel];
       if (!postSlackMessageFn) {
@@ -82,15 +82,17 @@ function listenForSlackMessages(dependenciesObj) {
       });
     }
     // find the job this message pertains to
-    const [job, phraseMatch] = findJobFromMessage(message);
+    const [ job, phraseMatch ] = findJobFromMessage(message);
     // check if it needs identifying info
-    let userInfo = {};
+    const userInfo = {};
     let userInfoPopulated = true;
     if (job.userInfoNeeded) {
-      let userInfoStore = dependenciesObj.userInfoStore;
+      const userInfoStore = dependenciesObj.userInfoStore;
       let retrievedUserInfo;
       try {
-        retrievedUserInfo = await userInfoStore.findOne({user: message.user});
+        retrievedUserInfo = await userInfoStore.findOne({
+          user: message.user
+        });
       } catch (e) {
         console.log(e);
         retrievedUserInfo = {};
@@ -98,7 +100,7 @@ function listenForSlackMessages(dependenciesObj) {
       if (retrievedUserInfo === null) {
         retrievedUserInfo = {};
       }
-      for (let userInfoNeeded of job.userInfoNeeded) {
+      for (const userInfoNeeded of job.userInfoNeeded) {
         if (!retrievedUserInfo[userInfoNeeded]) {
           // if we don't have what we're looking for ask the user to input it.
           bot.reply(message,
@@ -114,7 +116,7 @@ function listenForSlackMessages(dependenciesObj) {
     }
     if (userInfoPopulated) {
       //bundle dependencies and add bot, message, userInfo
-      let dependencies = bundleDependencies(dependenciesObj, job.dependencies);
+      const dependencies = bundleDependencies(dependenciesObj, job.dependencies);
       dependencies.bot = bot;
       dependencies.message = message;
       dependencies.userInfo = userInfo;
@@ -124,7 +126,7 @@ function listenForSlackMessages(dependenciesObj) {
   }
 }
 
-function findJobFromMessage(message) {
+function findJobFromMessage(unknownMessage) {
    const unknownIntent = {
     fn: function ({
                    message,
@@ -134,13 +136,13 @@ function findJobFromMessage(message) {
     },
     dependencies: []
   };
-  const match = fuzzyMatcher.get(message.text);
+  const match = fuzzyMatcher.get(unknownMessage.text);
   console.log(match);
   // if we don't have a match or the confidence is extremely low, tell the user we don't know what to do
   if (!match || match[0][0] < 0.33) {
-    return [unknownIntent, undefined];
+    return [ unknownIntent, undefined ];
   } else {
-    return [phraseToJobMap[match[0][1]], match[0][1]];
+    return [ phraseToJobMap[match[0][1]], match[0][1] ];
   }
 }
 

@@ -21,12 +21,12 @@ module.exports = {
    let fixVersionChangedIds = [];
    let issuesReceived = 0;
    let totalNumIssues;
-   let issueSummaries = {};
+   const issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `status CHANGED DURING (-30m, now())`,
+       jql: `status CHANGED DURING (-30m, now()) AND issuetype in (Epic, Improvement, Story, "Technical task")`,
        maxResults: 250,
-       fields: ['summary'],
+       fields: [ 'summary' ],
        startAt: issuesReceived
      });
      issuesReceived += jiraQueryResult.data.maxResults;
@@ -39,7 +39,7 @@ module.exports = {
    getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
-       let slackMessage = buildSlackMessage(changes);
+       const slackMessage = buildSlackMessage(changes);
        console.log(slackMessage);
        if (slackMessage !== '') {
          slackChannel(slackMessage).then(console.log).catch(console.log);
@@ -49,7 +49,7 @@ module.exports = {
 };
 
 function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
-  let promises = [];
+  const promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
     promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
   }
@@ -57,10 +57,10 @@ function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummari
 }
 
 async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
-  let response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
+  const response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
   // reversing because we want the most recent change
-  for (let changeObject of response.data.values.reverse()) {
-    for (let change of changeObject.items.reverse()) {
+  for (const changeObject of response.data.values.reverse()) {
+    for (const change of changeObject.items.reverse()) {
       if (change.fieldId === 'status') {
         if (change.toString !== 'Resolved' && change.toString !== 'In QA Testing') {
           return '';
@@ -97,19 +97,19 @@ function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
 
 function buildSlackMessage(changes) {
   console.log('building slack message');
-  let consolidatedChanges = {};
-  for (let change of changes) {
-    let entry = consolidatedChanges[change.author];
+  const consolidatedChanges = {};
+  for (const change of changes) {
+    const entry = consolidatedChanges[change.author];
     if (entry) {
       entry.push(change.changeString);
     } else {
-      consolidatedChanges[change.author] = [change.changeString];
+      consolidatedChanges[change.author] = [ change.changeString ];
     }
   }
   let message = '';
-  for (let key in consolidatedChanges) {
+  for (const key in consolidatedChanges) {
     message += `*${key}*\n`;
-    for (let item of consolidatedChanges[key]) {
+    for (const item of consolidatedChanges[key]) {
       message += `>${item}\n`;
     }
   }

@@ -21,12 +21,12 @@ module.exports = {
    let fixVersionChangedIds = [];
    let issuesReceived = 0;
    let totalNumIssues;
-   let issueSummaries = {};
+   const issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
        jql: `fixVersion CHANGED DURING (-30m, now())`,
        maxResults: 250,
-       fields: ['summary'],
+       fields: [ 'summary' ],
        startAt: issuesReceived
      });
      issuesReceived += jiraQueryResult.data.maxResults;
@@ -40,7 +40,7 @@ module.exports = {
      then(result => {
        const changes = result.filter(change => {return change !== ''});
        console.log('building slack message');
-       let slackMessage = buildSlackMessage(changes);
+       const slackMessage = buildSlackMessage(changes);
        console.log(slackMessage);
        if (slackMessage !== '') {
          slackChannel(slackMessage).then(console.log).catch(console.log);
@@ -61,7 +61,7 @@ const qaUserList = [
 ];
 
 function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
-  let promises = [];
+  const promises = [];
   for (const fixVersionChangeId of fixVersionChangedIds) {
     promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
   }
@@ -69,11 +69,11 @@ function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummari
 }
 
 async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
-  let response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
+  const response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
   // reversing because we want the most recent change
-  for (let changeObject of response.data.values.reverse()) {
-    let userIsInQA = qaUserList.includes(changeObject.author.name);
-    for (let change of changeObject.items.reverse()) {
+  for (const changeObject of response.data.values.reverse()) {
+    const userIsInQA = qaUserList.includes(changeObject.author.name);
+    for (const change of changeObject.items.reverse()) {
       if (change.fieldId === 'fixVersions') {
         if (userIsInQA) {
           return '';
@@ -117,20 +117,20 @@ function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
 }
 
 function buildSlackMessage(changes) {
-  let consolidatedChanges = {};
-  for (let change of changes) {
-    let entry = consolidatedChanges[change.author];
+  const consolidatedChanges = {};
+  for (const change of changes) {
+    const entry = consolidatedChanges[change.author];
     console.log(change.author);
     if (entry) {
       entry.push(change.changeString);
     } else {
-      consolidatedChanges[change.author] = [change.changeString];
+      consolidatedChanges[change.author] = [ change.changeString ];
     }
   }
   let message = '';
-  for (let key in consolidatedChanges) {
+  for (const key in consolidatedChanges) {
     message += `*${key}*\n`;
-    for (let item of consolidatedChanges[key]) {
+    for (const item of consolidatedChanges[key]) {
       message += `>${item}\n`;
     }
   }
