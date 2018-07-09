@@ -15,6 +15,22 @@ module.exports = {
 }
 ```
 
+To use the Google calendar branch day functionality, there must also be a google_creds.json file and another object, calendar, in the creds.js module that looks like:
+
+```
+calendar: {
+  key,
+  serviceAcctId:  <a google service account address (e.g. <service_account>@<project_name>.iam.gserviceaccount.com)>,
+  calendarId: {
+    primary: <email that has a primary calendar with branch day on it>
+  },
+  timezone: <timezone>
+}
+```
+where key is defined as `require('./google_creds.json').private_key`
+
+For more information about using node-google-calendar see [the package documentation](https://github.com/yuhong90/node-google-calendar/wiki).
+
 To add a time based job you create a javascript file in the jobs directory that looks like:
 
 ```
@@ -45,7 +61,7 @@ phrases: [
 ],
 userInfoNeeded: [
   <list the user info you need. Must match exactly what's listed in jobRunner.
-   gets passed to fn as 'userInfo'. Can be omitted if you don't need anything.> 
+   gets passed to fn as 'userInfo'. Can be omitted if you don't need anything.>
 ]
 ```
 ### important note for invokeEvery
