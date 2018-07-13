@@ -14,15 +14,17 @@ const callbackToResolveReject = function (resolve, reject) {
 };
 
 const UserInfoStore = new function () {
-  let vm = this;
+  const vm = this;
 
   vm.init = function() {
     return new Promise(function (resolve, reject) {
-      MongoClient.connect("mongodb://localhost:27017/exampleDb", function (err, client) {
+      MongoClient.connect(`${ url }/exampleDb`, function (err, client) {
         if (!err) {
-          const db = client.db('snitch-db');
+          const db = client.db(dbName);
           const userInfoCollection = db.collection('userInfo');
-          let userInfoStore = {collection: userInfoCollection};
+          const userInfoStore = {
+            collection: userInfoCollection
+          };
           userInfoStore.insertOne = function (document) {
             return new Promise(function (resolve, reject) {
               userInfoStore.collection.insertOne(document, callbackToResolveReject(resolve, reject));

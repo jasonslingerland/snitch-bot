@@ -2,8 +2,8 @@
 const utils = require('../utils');
 
 module.exports = {
-  name: 'hello',
-  description: 'say hello',
+  name: 'fixVersionChangeByUser',
+  description: 'get all changes to fix versions by a particular user',
   type: 'responsive',
   dependencies: [
     'jira'

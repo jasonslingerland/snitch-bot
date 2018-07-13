@@ -9,48 +9,78 @@ module.exports = {
     'jira'
   ],
   userInfoNeeded: [
-    'jiraUserId'
+    'jiraUserId',
+    'jiraTeam'
   ],
   hiddenFromHelp: false,
   phrases: [
     'p2 links',
     'p3 links',
+    'give me my team\'s p2 links',
     'give me p2 links',
-    'give me p3 links'
+    'give me p3 links',
+    'give me my p2 details',
+    'give me details for my p3s',
+    'give me the details for the team\'s p3 bugs'
   ],
   fn: function ({
                   bot,
                   message,
                   jira,
-                  phraseMatch,
                   userInfo
                 }) {
-    let filterPath;
-    let priorityString;
-    if (phraseMatch.includes('p2')) {
-      filterPath = 'filter/15209';
-      priorityString = 'P2';
-    } else {
-      filterPath = 'filter/17400';
-      priorityString = 'P3'
+    const filters = [];
+    let assignee = `assignee = ${ userInfo.jiraUserId } AND `;
+    let ownershipString = 'Your';
+    let isTeam = false;
+    let isMine = false;
+    const p2p3 = [];
+    const messageText = message.text.toLowerCase();
+    if (messageText.includes('team')) {
+      isTeam = true}
+    if (messageText.includes('my') || messageText.includes('mine')) {
+      isMine = true}
+    if (isTeam && isMine) {
+      assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
+      ownershipString = 'Your team\'s';
     }
-    jira.get(filterPath).
-    then(filterResults => {
-      console.log(filterResults);
-      utils.listIssuesInResult({
-        jqlOrPromise: `assignee = ${userInfo.jiraUserId} AND ` +filterResults.data.jql,
-        bot: bot,
-        message: message,
-        jira: jira
-      }).
-      then(issueList => {
-        bot.reply(message, `*Your ${priorityString} bugs are*:\n${issueList}`);
-      }).catch(err => {
-        console.log('$$$$$$$$');
-      });
+    else if (isTeam) {
+      const team = utils.getTeamFromMessageText(messageText);
+      if (!team) {
+        bot.reply(message, 'Sorry, I\'m not what team you\'re referring to. Type `@QA-Bot list teams` for the ones that I know.');
+        return };
+      assignee = `assignee in membersOf("${ team }") AND `;
+      ownershipString = `The "${ team }" team's`;
+    };
+
+    if (messageText.includes('p2')) {
+      p2p3.push(' P2');
+      filters.push(`${ assignee }filter = 15209`);
+    }
+    if (messageText.includes('p3')) {
+      p2p3.push(' P3');
+      filters.push(`${ assignee }filter = 17400`);
+    }
+
+    const jql = utils.jiraBaseUrl + '/issues/?jql=' + encodeURIComponent(filters.join(' AND '));
+    const priorityString = p2p3.join(' and');
+    utils.listIssuesInResult({
+      jqlOrPromise: filters,
+      bot,
+      message,
+      jira
+    }).
+    then(issueList => {
+      const reply = {
+        text: `*<${ jql }|${ ownershipString }${ priorityString } bugs> are*:\n`,
+        attachments: [ {
+          color: ((issueList[0] === 'No issues.') ? 'good' : 'danger'),
+          text: `${issueList}`
+        } ]
+      };
+      bot.reply(message, reply);
     }).catch(err => {
       console.log(err);
-      utils.somethingWentWrong(bot, message);
     });
   }
 };

@@ -13,7 +13,8 @@ module.exports = {
     'hi',
     'what\'s up?',
     'hey',
-    'hiya'
+    'hiya',
+    'hi there'
   ],
   fn: function ({
                   bot,

@@ -2,8 +2,8 @@
 const utils = require('../utils');
 
 module.exports = {
- name: 'fix version snitch',
- description: 'checks to see if anyone not in QA changes a fix version',
+ name: 'resolved snitch',
+ description: 'checks to see if anyone resolved a story',
  type: 'time-based',
  dependencies: [
    'slackChannel',
@@ -17,14 +17,14 @@ module.exports = {
                 jira,
                 mongo
  }) {
-   const collection = mongo.collection('sentFixVersionNotifications');
+   const collection = mongo.collection('sentResolvedNotifications');
    let fixVersionChangedIds = [];
    let issuesReceived = 0;
    let totalNumIssues;
    const issueSummaries = {};
    do {
      const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `fixVersion CHANGED DURING (-30m, now())`,
+       jql: `status CHANGED DURING (-30m, now()) AND issuetype in (Epic, Improvement, Story, "Technical task")`,
        maxResults: 250,
        fields: [ 'summary' ],
        startAt: issuesReceived
@@ -39,7 +39,6 @@ module.exports = {
    getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
-       console.log('building slack message');
        const slackMessage = buildSlackMessage(changes);
        console.log(slackMessage);
        if (slackMessage !== '') {
@@ -48,17 +47,6 @@ module.exports = {
      }).catch(console.log);
  }
 };
-
-const qaUserList = [
-  'jramsley',
-  'jslingerland',
-  'mbarr',
-  'kathyChang',
-  'jsundahl',
-  'rbaek',
-  'rdharmadhikari',
-  'nkania'
-];
 
 function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
   const promises = [];
@@ -72,10 +60,9 @@ async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, coll
   const response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
   // reversing because we want the most recent change
   for (const changeObject of response.data.values.reverse()) {
-    const userIsInQA = qaUserList.includes(changeObject.author.name);
     for (const change of changeObject.items.reverse()) {
-      if (change.fieldId === 'fixVersions') {
-        if (userIsInQA) {
+      if (change.fieldId === 'status') {
+        if (change.toString !== 'Resolved' && change.toString !== 'In QA Testing') {
           return '';
         } else {
           const changeKey = {
@@ -104,23 +91,15 @@ async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, coll
 
 function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
   const beginning = utils.createIssueLink(fixVersionChangedId);
-  let end;
-  if (fromString === null) {
-    end = ` ADDED fix version ${toString}`;
-  } else if (toString === null) {
-    end = ` REMOVED fix version ${fromString}`;
-  } else {
-    end = ` CHANGED from ${fromString} to ${toString}`;
-  }
-  end = end + '\n>  ' + summary;
+  const end = ` status CHANGED from ${fromString} to ${toString}` + '\n>  ' + summary;
   return beginning + end;
 }
 
 function buildSlackMessage(changes) {
+  console.log('building slack message');
   const consolidatedChanges = {};
   for (const change of changes) {
     const entry = consolidatedChanges[change.author];
-    console.log(change.author);
     if (entry) {
       entry.push(change.changeString);
     } else {

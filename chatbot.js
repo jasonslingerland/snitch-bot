@@ -20,7 +20,7 @@ exports.fn = {
     });
     // create rtm connection
     function startRtm() {
-      slackBot.startRTM((err, bot, payload) => {
+      slackBot.startRTM((err) => {
         if (err) {
           throw new Error('Could not connect to Slack');
         }
@@ -29,7 +29,7 @@ exports.fn = {
     }
     startRtm();
     // listener that handles incoming messages
-    slackController.hears(['.*'], ['direct_message', 'direct_mention'], messageReceivedFn);
+    slackController.hears([ '.*' ], [ 'direct_message', 'direct_mention' ], messageReceivedFn);
     slackController.on('rtm_close', function (bot) {
       bot.say({
         channel: 'C90JDAY92',
@@ -40,4 +40,3 @@ exports.fn = {
     });
   }
 };
-

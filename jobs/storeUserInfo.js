@@ -14,6 +14,7 @@ module.exports = {
     'set my Github id to: "12345"',
     'set my Github user ID to "12345"',
     'set my Jira user ID to "someone@onshape.com"',
+    'set my Jira team to "developers"'
   ],
   fn: function ({
                   bot,
@@ -25,17 +26,26 @@ module.exports = {
      TODO: either add a better way to automagically keep up with user info stuff, or add to docs that this needs
      to stay updated
      */
+    let notExactMatch = false;
     let userInfoValue = message.text.split(/[“”"'`‘’]/)[1];
-    if (userInfoValue === undefined) {
-      utils.somethingWentWrong(bot, message)();
-      return;
+    if (!userInfoValue) {
+      const messageWords = message.text.split(' ');
+      console.log(messageWords);
+      userInfoValue = messageWords[messageWords.indexOf('to') + 1];
+      notExactMatch = true;
+      if (!userInfoValue) {
+        utils.somethingWentWrong(bot, message)();
+        return }
     } else {
       userInfoValue = userInfoValue.trim();
     }
     let userInfoKey;
-    let lowercaseMessageText = message.text.toLowerCase();
+    const lowercaseMessageText = message.text.toLowerCase();
     if (lowercaseMessageText.includes('git')) {
       userInfoKey = 'githubId';
+    } else if (lowercaseMessageText.includes('jira') && lowercaseMessageText.includes('team')) {
+      userInfoKey = 'jiraTeam'
+      userInfoValue = utils.matchTeam(userInfoValue);
     } else if (lowercaseMessageText.includes('jira')) {
       userInfoKey = 'jiraUserId'
     } else {
@@ -48,16 +58,17 @@ module.exports = {
     userInfoStore[message.user][userInfoKey] = userInfoValue;
     const valueToSet = {};
     valueToSet[userInfoKey] = userInfoValue;
-    userInfoStore.collection.findOneAndUpdate({user: message.user},
-                                              {$set: valueToSet},
-                                              {
-                                                returnOriginal: false,
-                                                upsert: true
-                                              }).
-    then(result => {
+    userInfoStore.collection.findOneAndUpdate({
+        user: message.user
+      }, {
+        $set: valueToSet
+      }, {
+        returnOriginal: false,
+        upsert: true
+      }).then(result => {
       console.log(result);
       bot.reply(message, `Got it! I've set your ${userInfoStrings[userInfoKey]} to \`${userInfoValue}\`. `
-        + 'If this isn\'t correct please double check your spelling and formatting and try again.');
+        + `If this isn't correct please double check your spelling ${ (notExactMatch) ? 'or enclose your value in quotes' : '' } and try again`);
     }).catch(utils.somethingWentWrong(bot, message));
   }
 };
