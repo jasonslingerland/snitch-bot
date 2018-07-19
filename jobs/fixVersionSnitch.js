@@ -22,24 +22,29 @@ module.exports = {
    let issuesReceived = 0;
    let totalNumIssues;
    const issueSummaries = {};
+   const issueChanges = {};
    do {
-     const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `fixVersion CHANGED DURING (-30m, now())`,
-       maxResults: 250,
-       fields: [ 'summary' ],
-       startAt: issuesReceived
-     });
-     issuesReceived += jiraQueryResult.data.maxResults;
-     totalNumIssues = jiraQueryResult.data.total;
-     fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
-     jiraQueryResult.data.issues.forEach(issue => {
-       issueSummaries[issue.key] = issue.fields.summary;
-     });
+     await jira.get('search', {
+       params : {
+         jql: 'project in (BelCAD, Android, iOS) AND issuetype in (Epic, Improvement, Story, "Technical task") AND fixVersion CHANGED DURING (-10m, now() ) AND NOT fixVersion CHANGED DURING (-10m, now() ) BY membersOf(QE)',
+         maxResults: 20,
+         fields: 'summary',
+         startAt: issuesReceived,
+         expand: 'changelog'
+       }
+     }).then(function (response) {
+       issuesReceived += response.data.maxResults;
+       totalNumIssues = response.data.total;
+       fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(response.data.issues));
+       response.data.issues.forEach(issue => {
+         issueSummaries[issue.key] = issue.fields.summary;
+         issueChanges[issue.key] = issue.changelog.histories;
+       });
+     }).catch(console.log);
    } while (issuesReceived < totalNumIssues);
-   getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
+   getUnwantedChanges(fixVersionChangedIds, collection, issueSummaries, issueChanges).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
-       console.log('building slack message');
        const slackMessage = buildSlackMessage(changes);
        console.log(slackMessage);
        if (slackMessage !== '') {
@@ -49,78 +54,69 @@ module.exports = {
  }
 };
 
-const qaUserList = [
-  'jramsley',
-  'jslingerland',
-  'mbarr',
-  'kathyChang',
-  'jsundahl',
-  'rbaek',
-  'rdharmadhikari',
-  'nkania'
-];
-
-function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
+function getUnwantedChanges(fixVersionChangedIds, collection, issueSummaries, issueChanges) {
   const promises = [];
-  for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
-  }
+  for (const fixVersionChangedId of fixVersionChangedIds) {
+    promises.push(getUnwantedChangeInIssue(fixVersionChangedId, collection, issueSummaries[fixVersionChangedId], issueChanges[fixVersionChangedId]));
+  };
   return Promise.all(promises);
 }
 
-async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
-  const response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
-  // reversing because we want the most recent change
-  for (const changeObject of response.data.values.reverse()) {
-    const userIsInQA = qaUserList.includes(changeObject.author.name);
-    for (const change of changeObject.items.reverse()) {
-      if (change.fieldId === 'fixVersions') {
-        if (userIsInQA) {
-          return '';
-        } else {
-          const changeKey = {
-            author: changeObject.author.name,
-            timestamp: changeObject.created
-          };
-          const mongoResult = await collection.findOne(changeKey);
-          if (mongoResult === null) {
-            await collection.insertOne(changeKey);
-            return {
-              author: changeObject.author.name,
-              changeString: buildChangeString(fixVersionChangedId,
-                                              summary,
-                                              change.fromString,
-                                              change.toString)
-            };
-          } else {
-            return '';
+async function getUnwantedChangeInIssue(fixVersionChangedId, collection, summary, changes) {
+  for (const change of changes) {
+    for (const index in change.items) {
+      const currentItem = change.items[index];
+      const nextItem = change.items[index + 1];
+      if (currentItem.fieldId === "fixVersions"){
+        const changeKey = {
+          author: change.author.name,
+          timestamp: change.created
+        };
+        const toString = currentItem.toString;
+        let fromString = currentItem.fromString;
+        if (fromString === null && nextItem) { //I hate that Jira is making me do this, but every fix version change is recorded as a seperate add and remove
+          if (nextItem.fieldID === "fixVersions") {
+            fromString = nextItem.fromString;
           }
         }
+        const mongoResult = await collection.findOne(changeKey);
+        if (mongoResult === null) {
+          await collection.insertOne(changeKey);
+          return {
+            author: change.author.name,
+            changeString: buildChangeString(fixVersionChangedId,
+                                            summary,
+                                            item.fromString,
+                                            item.toString)
+          };
+        } else{
+          return ''
+        };
       }
-    }
-  }
+    };
+  };
   return '';
 }
 
 function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
-  const beginning = utils.createIssueLink(fixVersionChangedId);
+  const beginning = utils.createIssueLink(fixVersionChangedId) + ' FIX VERSION ';
   let end;
   if (fromString === null) {
-    end = ` ADDED fix version ${toString}`;
+    end = `added ${toString}`;
   } else if (toString === null) {
-    end = ` REMOVED fix version ${fromString}`;
+    end = `removed ~${fromString}~`;
   } else {
-    end = ` CHANGED from ${fromString} to ${toString}`;
+    end = `changed ~${fromString}~ --> *${toString}*`;
   }
-  end = end + '\n>  ' + summary;
+  end = end + '\n> ' + summary;
   return beginning + end;
 }
 
 function buildSlackMessage(changes) {
+  console.log('building slack message');
   const consolidatedChanges = {};
   for (const change of changes) {
     const entry = consolidatedChanges[change.author];
-    console.log(change.author);
     if (entry) {
       entry.push(change.changeString);
     } else {
