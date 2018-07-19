@@ -11,32 +11,40 @@ module.exports = {
    'mongo'
  ],
  slackChannel: 'test',
- invokeEvery: '5 m',
+ invokeEvery: '1 m',
  fn: async function({
                 slackChannel,
                 jira,
                 mongo
  }) {
    const collection = mongo.collection('sentResolvedNotifications');
-   let fixVersionChangedIds = [];
+   let statusChangedIds = [];
    let issuesReceived = 0;
    let totalNumIssues;
    const issueSummaries = {};
+   const issueChanges = {};
+   const issueResolutions = {};
    do {
-     const jiraQueryResult = await jira.makeJqlQuery({
-       jql: `status CHANGED DURING (-30m, now()) AND issuetype in (Epic, Improvement, Story, "Technical task")`,
-       maxResults: 250,
-       fields: [ 'summary' ],
-       startAt: issuesReceived
-     });
-     issuesReceived += jiraQueryResult.data.maxResults;
-     totalNumIssues = jiraQueryResult.data.total;
-     fixVersionChangedIds = fixVersionChangedIds.concat(utils.getIssueKeys(jiraQueryResult.data.issues));
-     jiraQueryResult.data.issues.forEach(issue => {
-       issueSummaries[issue.key] = issue.fields.summary;
-     });
+     await jira.get('search', {
+       params : {
+         jql: 'project in (BelCAD, Android, iOS) AND status CHANGED DURING (-10m, now() ) AND NOT status CHANGED DURING (-10m, now() ) BY membersOf(QE)',
+         maxResults: 20,
+         fields: 'summary, resolution',
+         startAt: issuesReceived,
+         expand: 'changelog'
+       }
+     }).then(function (response) {
+       issuesReceived += response.data.maxResults;
+       totalNumIssues = response.data.total;
+       statusChangedIds = statusChangedIds.concat(utils.getIssueKeys(response.data.issues));
+       response.data.issues.forEach(issue => {
+         issueSummaries[issue.key] = issue.fields.summary;
+         issueResolutions[issue.key] = issue.fields.resolution;
+         issueChanges[issue.key] = issue.changelog.histories;
+       });
+     }).catch(console.log);
    } while (issuesReceived < totalNumIssues);
-   getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries).
+   getUnwantedChanges(statusChangedIds, collection, issueSummaries, issueResolutions, issueChanges).
      then(result => {
        const changes = result.filter(change => {return change !== ''});
        const slackMessage = buildSlackMessage(changes);
@@ -48,50 +56,52 @@ module.exports = {
  }
 };
 
-function getUnwantedChanges(fixVersionChangedIds, jira, collection, issueSummaries) {
+function getUnwantedChanges(statusChangedIds, collection, issueSummaries, issueResolutions, issueChanges) {
   const promises = [];
-  for (const fixVersionChangeId of fixVersionChangedIds) {
-    promises.push(getUnwantedChangeInIssue(fixVersionChangeId, issueSummaries[fixVersionChangeId], jira, collection));
-  }
+  for (const statusChangedId of statusChangedIds) {
+    promises.push(getUnwantedChangeInIssue(statusChangedId, collection, issueSummaries[statusChangedId], issueResolutions[statusChangedId], issueChanges[statusChangedId]));
+  };
   return Promise.all(promises);
 }
 
-async function getUnwantedChangeInIssue(fixVersionChangedId, summary, jira, collection) {
-  const response = await jira.get(`issue/${fixVersionChangedId}/changelog`);
-  // reversing because we want the most recent change
-  for (const changeObject of response.data.values.reverse()) {
-    for (const change of changeObject.items.reverse()) {
-      if (change.fieldId === 'status') {
-        if (change.toString !== 'Resolved' && change.toString !== 'In QA Testing') {
+async function getUnwantedChangeInIssue(statusChangedId, collection, summary, resolution, changes) {
+  for (const change of changes) {
+    for (const item of change.items) {
+      if (item.fieldId === 'status') {
+        if (item.toString !== 'Resolved' && item.toString !== 'In QA Testing') {
           return '';
         } else {
           const changeKey = {
-            author: changeObject.author.name,
-            timestamp: changeObject.created
+            author: change.author.name,
+            timestamp: change.created
           };
           const mongoResult = await collection.findOne(changeKey);
           if (mongoResult === null) {
             await collection.insertOne(changeKey);
             return {
-              author: changeObject.author.name,
-              changeString: buildChangeString(fixVersionChangedId,
+              author: change.author.name,
+              changeString: buildChangeString(statusChangedId,
                                               summary,
-                                              change.fromString,
-                                              change.toString)
+                                              item.fromString,
+                                              item.toString,
+                                              resolution.name)
             };
           } else {
-            return '';
-          }
+            return ''
+          };
         }
       }
-    }
-  }
+    };
+  };
   return '';
 }
 
-function buildChangeString(fixVersionChangedId, summary, fromString, toString) {
-  const beginning = utils.createIssueLink(fixVersionChangedId);
-  const end = ` status CHANGED from ${fromString} to ${toString}` + '\n>  ' + summary;
+function buildChangeString(statusChangedId, summary, fromString, toString, resolution) {
+  const beginning = utils.createIssueLink(statusChangedId) + ' STATUS changed ';
+  let end = ` ~${fromString}~ --> *${toString}*` + '\n> ' + summary;
+  if (resolution) {
+    end += `\n> _Resolution: ${ resolution }_`
+  }
   return beginning + end;
 }
 
