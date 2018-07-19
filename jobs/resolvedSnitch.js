@@ -11,7 +11,7 @@ module.exports = {
    'mongo'
  ],
  slackChannel: 'test',
- invokeEvery: '1 m',
+ invokeEvery: '5 m',
  fn: async function({
                 slackChannel,
                 jira,
