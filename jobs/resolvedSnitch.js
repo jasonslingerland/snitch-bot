@@ -11,7 +11,7 @@ module.exports = {
    'mongo'
  ],
  slackChannel: 'test',
- invokeEvery: '1 m',
+ invokeEvery: '5 m',
  fn: async function({
                 slackChannel,
                 jira,
@@ -27,7 +27,7 @@ module.exports = {
    do {
      await jira.get('search', {
        params : {
-         jql: 'project in (BelCAD, Android, iOS) AND status CHANGED DURING (-10m, now() ) AND NOT status CHANGED DURING (-10m, now() ) BY membersOf(QE)',
+         jql: 'project in (BelCAD, Android, iOS) AND issuetype in (Epic, Improvement, Story, "Technical task") AND status CHANGED DURING (-10m, now() ) AND NOT status CHANGED DURING (-10m, now() ) BY membersOf(QE)',
          maxResults: 20,
          fields: 'summary, resolution',
          startAt: issuesReceived,
