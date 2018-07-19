@@ -56,7 +56,7 @@ module.exports = {
     const messageText = message.text.toLowerCase();
     if (messageText.includes('team')) {
       isTeam = true}
-    if (messageText.includes('my') || messageText.includes('mine')) {
+    if (messageText.includes('my') || messageText.includes('mine') || messageText.includes(' i ')) {
       isMine = true}
     if (isTeam && isMine) {
       assignee = `assignee in membersOf(${ userInfo.jiraTeam }) AND `;
@@ -89,7 +89,11 @@ module.exports = {
       p2p3.push(' P3');
       filters.push(`${ assignee }filter = 17400`);
     }
-    else if (!messageText.includes('p2') && !messageText.includes('p3')) {
+    if (messageText.includes('p4') || messageText.includes('customer')) {
+      p2p3.push(' P4');
+      filters.push(`${ assignee }filter = 35600`);
+    }
+    else if (!messageText.includes('p2') && !messageText.includes('p3') && !messageText.includes('p4') && !messageText.includes('customer')) {
       p2p3.push('');
       filters.push(`${ assignee }status IN (Open, Reopened, "In Progress") AND type = bug`);
     }

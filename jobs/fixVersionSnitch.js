@@ -26,7 +26,7 @@ module.exports = {
    do {
      await jira.get('search', {
        params : {
-         jql: 'project in (BelCAD, Android, iOS) AND fixVersion CHANGED DURING (-10m, now() ) AND NOT fixVersion CHANGED DURING (-10m, now() ) BY membersOf(QE)',
+         jql: 'project in (BelCAD, Android, iOS) AND issuetype in (Epic, Improvement, Story, "Technical task") AND fixVersion CHANGED DURING (-10m, now() ) AND NOT fixVersion CHANGED DURING (-10m, now() ) BY membersOf(QE)',
          maxResults: 20,
          fields: 'summary',
          startAt: issuesReceived,

@@ -61,6 +61,10 @@ module.exports = {
       p2p3.push(' P3');
       filters.push(`${ assignee }filter = 17400`);
     }
+    if (messageText.includes('p4') || (messageText.includes('customer')) {
+      p2p3.push(' P4');
+      filters.push(`${ assignee }filter = 35600`);
+    }
 
     const jql = utils.jiraBaseUrl + '/issues/?jql=' + encodeURIComponent(filters.join(' AND '));
     const priorityString = p2p3.join(' and');
