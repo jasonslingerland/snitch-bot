@@ -2,8 +2,8 @@
 const utils = require('../utils');
 
 module.exports = {
-  name: 'releaseProcess',
-  description: 'links to the confluence article about the release process',
+  name: 'listTeams',
+  description: 'lists all the jira team names that the bot can automatically recognize',
   type: 'responsive',
   dependencies: [
   ],
