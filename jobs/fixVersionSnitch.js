@@ -86,8 +86,8 @@ async function getUnwantedChangeInIssue(fixVersionChangedId, collection, summary
             author: change.author.name,
             changeString: buildChangeString(fixVersionChangedId,
                                             summary,
-                                            toString,
-                                            fromString)
+                                            fromString,
+                                            toString)
           };
         } else{
           return ''
