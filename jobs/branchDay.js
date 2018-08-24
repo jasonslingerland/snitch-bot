@@ -30,8 +30,11 @@ module.exports = {
       };
       build_calendar.Events.list(calendar_config.calendarId.primary, params).then(response => {
         const nextBranch = moment(response[0].start.dateTime);
-        bot.reply(message, `The next branch is on ${ nextBranch.format('dddd, MMMM Do [at] h:mm a') }`)
-        console.log(json);
+        let reply = `The next branch is on ${ nextBranch.format('dddd, MMMM Do [at] h:mm a') }`
+        if (timeMin.date() === nextBranch.date()){
+          reply = 'Branch Day is today! :party_parrot:'
+        }
+        bot.reply(message, reply)
       }).catch(err => {
         console.log(err.message);
       });
